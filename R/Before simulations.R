@@ -1,0 +1,141 @@
+library("dplyr")
+library("funrar")
+
+# Chose traits to use to compute the distinctiveness ####
+choice_traits_0<-function(traits){ # start from the table traits, and keep the variable below for computing the distinctiveness
+  # Here: both quantitative and qualitative traits are kept. colorRGB is considered as a factor, as well as Type.
+  rownames(traits)<-traits[,2]
+  traits[,which((colnames(traits) %in% 
+                   c(    "Type"    ,                   "S"  ,                       
+                         "HMax"    ,                   "AMax"   ,                    "G"  ,                        "DDMin"  ,                   
+                         "WiTN"      ,                 "WiTX"       ,                "THot"   ,                    "TCo2Hot" ,                  
+                         "DrTol"    ,                  "NTol"       ,                "Brow"         ,              "Ly"      ,                  
+                         "La"      ,                   "LQ"     ,                    "ImmT"    ,                   "ageMaturityForReproduction",
+                         "colorRGB"             )) )] 
+}
+
+choice_traits_1<-function(traits){ # start from the table traits, and keep the variable below for computing the distinctiveness
+  rownames(traits)<-traits[,2]
+  traits[,which(!(colnames(traits) %in% c("Type","colorRGB","Name","SName","ageMaturityForReproduction","TCo2Hot","LQ","ImmT","THot")) )] 
+}
+
+
+choice_traits_2<-function(traits){
+  rownames(traits)<-traits[,2]
+  select(traits ,  HMax, G, DDMin, WiTX, DrTol, La, A1max ) 
+}
+
+
+# Compute distinctiveness #####
+traits_dist<-function(traits){
+  # Computes functional distinctiveness on all the species and adds a new colums with it on the input data frame (i.e. traits, here).
+  dist_tot<-compute_dist_matrix(traits,metric='euclidean')
+  tidy<-as.data.frame(rownames(traits)) # tidy format for computing distinctiveness in the fonction below
+  colnames(tidy)<-"SName"
+  distinct_tot<-distinctiveness_com(com_df=tidy,
+                                    sp_col=colnames(tidy),abund=NULL,
+                                    dist_matrix=dist_tot,relative=F)
+  traits$Di<-distinct_tot$Di
+  traits
+}
+
+
+traits_dist_gower<-function(traits){ # using both quantitative and qualitative traits --> gower's distance (and not euclidean)
+  # Computes functional distinctiveness on all the species and adds a new colums with it on the input data frame (i.e. traits, here).
+  dist_tot<-compute_dist_matrix(traits,metric='gower')
+  tidy<-as.data.frame(rownames(traits)) # tidy format for computing distinctiveness in the fonction below
+  colnames(tidy)<-"SName"
+  distinct_tot<-distinctiveness_com(com_df=tidy,
+                                    sp_col=colnames(tidy),abund=NULL,
+                                    dist_matrix=dist_tot,relative=F)
+  traits$Di<-distinct_tot$Di
+  traits
+}
+
+
+# Write command files for ForCEEPS ####
+
+# For these 3 functions:
+# distinct_tot is a dataframe with the distinctiveness and the name of the species, ordered from 0 to 29.
+# length is the number of years of the simulation
+# site is a string of characters. e.g. "Bern"
+# e.g. Cmd_decr(distACP,length = 2000, yearstobejumped = 999, timestep=100,site="Bern")
+
+Cmd_decr<-function(distinct_tot,length,yearstobejumped,timestep,site){ # distinct_tot is the output of function traits_dist (above)
+  # Writes Cmd file with species removed from the most to the least distinctive
+  distinct_tot$Id <- c(0:29)
+  ord_decr<-distinct_tot[order(distinct_tot$Di,decreasing=TRUE),]$Id
+  
+  sink(paste0("data/raw/cmd2_",site,"_decreasing.txt"))
+  cat("# Forceps script command file, format SimulationCommandReader2 (Xavier Morin)")
+  cat("\n")
+  cat("\n")
+  cat("setupFileName = forceps.setup_PG")
+  cat("\n")
+  cat(paste0("numberOfYearsToBeJumped = ",yearstobejumped))
+  cat("\n")
+  cat(paste0("exportTimeStep = ",timestep))
+  cat("\n")
+  cat("\n")
+  cat("#siteFileName	climateFileName	numberOfYears	potentialSpeciesList")
+  cat("\n")
+  for (i in 1:length(ord_decr)){
+    cat(paste0("forceps.",site,".site	forceps.climate.",site,".txt	",length,"	"),ord_decr[i:length(ord_decr)])
+    cat("\n")
+  }
+  sink()
+}
+
+Cmd_incr<-function(distinct_tot,length,yearstobejumped,timestep,site){  
+  # Write Cmd file with species removed from the least to the most distinctive
+  distinct_tot$Id <- c(0:29)
+  ord_incr<-distinct_tot[order(distinct_tot$Di,decreasing=FALSE),]$Id
+  
+  sink(paste0("data/raw/cmd2_",site,"_increasing.txt"))
+  cat("# Forceps script command file, format SimulationCommandReader2 (Xavier Morin)")
+  cat("\n")
+  cat("\n")
+  cat("setupFileName = forceps.setup_PG")
+  cat("\n")
+  cat(paste0("numberOfYearsToBeJumped = ",yearstobejumped))
+  cat("\n")
+  cat(paste0("exportTimeStep = ",timestep))
+  cat("\n")
+  cat("\n")
+  cat("#siteFileName	climateFileName	numberOfYears	potentialSpeciesList")
+  cat("\n")
+  for (i in 1:length(ord_incr)){
+    cat(paste0("forceps.",site,".site	forceps.climate.",site,".txt	",length,"	"),ord_incr[i:length(ord_incr)])
+    cat("\n")
+  }
+  sink()
+}
+
+Cmd_rand<-function(distinct_tot,length,yearstobejumped,timestep,site){
+  # Write Cmd files with species removed in random order
+  # NB: here, we generate 300 dynamics (10 random removals of 30 species)
+  for (j in 1:10){
+    ord_random<-sample(c(0:29))
+    
+    sink(paste0("data/raw/cmd2_",site,"_random_",j,".txt"))
+    cat("# Forceps script command file, format SimulationCommandReader2 (Xavier Morin)")
+    cat("\n")
+    cat("\n")
+    cat("setupFileName = forceps.setup_PG")
+    cat("\n")
+    cat(paste0("numberOfYearsToBeJumped = ",yearstobejumped))
+    cat("\n")
+    cat(paste0("exportTimeStep = ",timestep))
+    cat("\n")
+    cat("\n")
+    cat("#siteFileName	climateFileName	numberOfYears	potentialSpeciesList")
+    cat("\n")
+    for (i in 1:length(ord_random)){
+      cat(paste0("forceps.",site,".site	forceps.climate.",site,".txt	",length,"	"),ord_random[i:length(ord_random)])
+      cat("\n")
+    }
+    sink()
+  }
+}
+
+
