@@ -1,4 +1,22 @@
 source("R/Analysis_data.R")
 
-# Final biomasses removal experiment ####
-removal_exp_final_biomasses(site="Bever")
+SITE <- c("Bern","Bever","Cottbus","Huttwil")
+
+# Final biomasses removal experiments ####
+for (site in SITE){ # Write a table with the final biomasses of all sets of simulations for each site
+  # NB: Takes up to a few minuts to run!
+  removal_exp_final_biomasses(site=site) 
+}
+
+library(ggplot2)
+for (site in SITE){
+  # plot the final biomasses in each condition
+  ggplot(result,aes(x=nb_removed,y=biomass_dec,color="Removing distinct species first")) +
+    labs(x="Number of species removed",y="Total biomass (T/ha)") +
+    geom_line()+
+    geom_ribbon(aes(ymin=int_min, ymax=int_max),fill="grey60", alpha=0.5,colour="black") +
+    geom_line(aes(x=nb_removed,y=biomass_inc, color="Removing distinct species last")) +
+    theme(legend.position = "bottom") +
+    ggtitle(site) +
+    ggsave(paste0("figures/",site,"_simulation.png"))
+}

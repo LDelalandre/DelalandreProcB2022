@@ -61,7 +61,6 @@ removal_exp_final_biomasses<- function(site) {
   colnames_res<-colnames(read.table("data/colnames_res.txt", header=T))
   
   richness<-c(30:1)
-  site <- "Bever" # choice of the site I focus on
   
   # Species removed with increasing functional distinctiveness
   biomass_inc<-c()
@@ -122,6 +121,6 @@ removal_exp_final_biomasses<- function(site) {
   RAND$biomass_inc <- biomass_inc
   RAND$nb_removed <- c(0:29)
   
-  write.table(RAND,paste0("data/processed",site,"_final biomass_species removal experiments_.txt"))
+  write.table(RAND,paste0("data/processed/",site,"_final biomass_species removal experiments_.txt"))
 }
 
