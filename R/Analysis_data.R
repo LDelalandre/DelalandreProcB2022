@@ -56,7 +56,6 @@ removal_exp_final_biomasses<- function(site) {
   # Writes a data frame with these informations in a .txt file
   
   # Data for having the names of the columns
-  setwd(".")
   colnames_mean<-colnames(read.table("data/colnames_mean.txt",header=T)) # idem
   colnames_res<-colnames(read.table("data/colnames_res.txt", header=T))
   
@@ -68,8 +67,10 @@ removal_exp_final_biomasses<- function(site) {
   for(i in c(1:30)){
     mean<-read.table(paste0("data/raw/output-cmd2_",site,"_increasing.txt/forceps.",site,".site_",i,"_mean.txt"))
     colnames(mean)<-colnames_mean
-    endbiom<-subset(mean,date== max(mean$date)) $ totalBiomass.t.ha.
-    biomass_inc<-c(biomass_inc,endbiom)
+    # biomass averaged
+    years_to_keep <- max(mean$date) - c(900,800,700,600,500,400,300,200,100,0)
+    meanbiom <- mean(subset(mean,date %in% years_to_keep)$totalBiomass.t.ha.)
+    biomass_inc<-c(biomass_inc,meanbiom)
     sd_biom_inc<-c(sd_biom_inc,sd(mean$totalBiomass.t.ha.))
   }
   
@@ -81,8 +82,10 @@ removal_exp_final_biomasses<- function(site) {
   for(i in c(1:30)){
     mean<-read.table(paste0("data/raw/output-cmd2_",site,"_decreasing.txt/forceps.",site,".site_",i,"_mean.txt"))
     colnames(mean)<-colnames_mean
-    endbiom<-subset(mean,date== max(mean$date)) $ totalBiomass.t.ha.
-    biomass_dec<-c(biomass_dec,endbiom)
+    # biomass averaged
+    years_to_keep <- max(mean$date) - c(900,800,700,600,500,400,300,200,100,0)
+    meanbiom <- mean(subset(mean,date %in% years_to_keep)$totalBiomass.t.ha.)
+    biomass_dec<-c(biomass_dec,meanbiom)
     sd_biom_dec<-c(sd_biom_dec,sd(mean$totalBiomass.t.ha.))
   }
   
@@ -96,8 +99,10 @@ removal_exp_final_biomasses<- function(site) {
     for(i in c(1:30)){
       mean<-read.table(paste0("data/raw/output-cmd2_",site,"_random_",j,".txt/forceps.",site,".site_",i,"_mean.txt"))
       colnames(mean)<-colnames_mean
-      endbiom<-subset(mean,date== max(mean$date)) $ totalBiomass.t.ha.
-      biomass_ran <- c(biomass_ran, endbiom)
+      # biomass averaged
+      years_to_keep <- max(mean$date) - c(900,800,700,600,500,400,300,200,100,0)
+      meanbiom <- mean(subset(mean,date %in% years_to_keep)$totalBiomass.t.ha.)
+      biomass_ran <- c(biomass_ran, meanbiom)
       sd_biomass_ran <- c(sd_biomass_ran, sd(mean$totalBiomass.t.ha.))
     }
     RAND[,j]<-biomass_ran
@@ -121,6 +126,23 @@ removal_exp_final_biomasses<- function(site) {
   RAND$biomass_inc <- biomass_inc
   RAND$nb_removed <- c(0:29)
   
-  write.table(RAND,paste0("data/processed/",site,"_final biomass_species removal experiments_.txt"))
+  # Same thing for sd(biomass). NB: it is computed on the biomass along ALL the simulation, includind the succession phase.
+  sd_int_min <- c()
+  sd_int_max <- c()
+  sd_mean <- c()
+  for (j in c(1:30)){
+    sd_int_min <- c(sd_int_min, mean(as.numeric(sd_RAND[j,])) + 1.96 * sd(as.numeric(sd_RAND[j,]))/sqrt(10) )
+    sd_int_max <- c(sd_int_max, mean(as.numeric(sd_RAND[j,])) - 1.96 * sd(as.numeric(sd_RAND[j,]))/sqrt(10) )
+    sd_mean <- c(sd_mean, mean(as.numeric(sd_RAND[j,])) )
+  }
+  sd_RAND$int_min <- sd_int_min
+  sd_RAND$int_max <- sd_int_max
+  sd_RAND$mean <- sd_mean
+  sd_RAND$sd_biomass_dec <- sd_biom_dec
+  sd_RAND$sd_biomass_inc <- sd_biom_inc
+  sd_RAND$nb_removed <- c(0:29)
+  
+  write.table(RAND,paste0("data/processed/Biomass_species removal experiments_",site,".txt"))
+  write.table(sd_RAND,paste0("data/processed/sd_biomass_species removal experiments_",site,".txt"))
 }
 
