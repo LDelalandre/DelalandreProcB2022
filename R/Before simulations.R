@@ -115,11 +115,7 @@ Cmd_rand<-function(distinct_tot,length,yearstobejumped,timestep,site){
   # Write Cmd files with species removed in random order
   # NB: here, we generate 300 dynamics (10 random removals of 30 species)
   for (j in 1:10){
-<<<<<<< HEAD
     set.seed(j)
-=======
-    set.seed(i)
->>>>>>> 9ca471abc1daf80245655c133a202b31d1df7d59
     ord_random<-sample(c(0:29))
     
     sink(paste0("data/raw/cmd2_",site,"_random_",j,".txt"))
