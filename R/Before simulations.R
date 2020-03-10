@@ -70,7 +70,7 @@ Cmd_decr<-function(distinct_tot,length,yearstobejumped,timestep,site){ # distinc
   cat("# Forceps script command file, format SimulationCommandReader2 (Xavier Morin)")
   cat("\n")
   cat("\n")
-  cat("setupFileName = forceps.setup_PG")
+  cat(paste0("setupFileName = forceps.setup_",site))
   cat("\n")
   cat(paste0("numberOfYearsToBeJumped = ",yearstobejumped))
   cat("\n")

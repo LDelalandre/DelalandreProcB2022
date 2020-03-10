@@ -3,6 +3,9 @@ library("magrittr")
 library(FactoMineR)
 library("funrar")
 
+source("R/Before simulations.R")
+SITE <- c("Bern","Bever","Cottbus","Huttwil")
+
 # Compute distinctiveness ####
 # The distinctiveness calculation that I used
 # First, I make a PCA, then I calculate the distinctiveness on the first axis
@@ -18,18 +21,22 @@ distACP <- ACP1$ind$coord %>%
   traits_dist()
 distACP$SName<-rownames(distACP)
 
-length <- 2000
-yearstobejumped <- 999
-timestep <- 100
-site <- "Bern"
 distinct_tot <-  distACP
 
 write.table(select(distinct_tot,Di,SName),"data/raw/distinctiveness of the species.txt",row.names=F)
 
 # Write command files ####
-Cmd_decr(distinct_tot,length, yearstobejumped, timestep,site)
-Cmd_incr(distinct_tot,length, yearstobejumped, timestep,site)
-Cmd_rand(distinct_tot,length, yearstobejumped, timestep,site)
+length <- 2000
+yearstobejumped <- 999
+timestep <- 100
+
+distinct_tot <- read.table("data/raw/distinctiveness of the species.txt",header = T)
+for (site in SITE){
+  Cmd_decr(distinct_tot,length, yearstobejumped, timestep,site)
+  Cmd_incr(distinct_tot,length, yearstobejumped, timestep,site)
+  Cmd_rand(distinct_tot,length, yearstobejumped, timestep,site)
+}
+
 
 
 
@@ -53,6 +60,6 @@ order0 <- c0_di[order(c0_di$Di),] # species ordered in increasing distinctivenes
 order1 <- c1_di[order(c1_di$Di),] # species ordered in increasing distinctiveness
 order2 <- c2_di[order(c2_di$Di),] # species ordered in increasing distinctiveness
 
-sink("incr order dits_0.txt"); cat(rownames(c0_di[order(c0_di$Di),])) ; sink()
-sink("incr order dits_1.txt"); cat(rownames(c1_di[order(c1_di$Di),])) ; sink()
-sink("incr order dits_2.txt"); cat(rownames(c2_di[order(c2_di$Di),])) ; sink()
+# sink("data/raw/incr order dist_0.txt"); cat(rownames(c0_di[order(c0_di$Di),])) ; sink()
+# sink("data/raw/incr order ditt_1.txt"); cat(rownames(c1_di[order(c1_di$Di),])) ; sink()
+# sink("data/raw/incr order dist_2.txt"); cat(rownames(c2_di[order(c2_di$Di),])) ; sink()

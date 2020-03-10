@@ -49,7 +49,7 @@ richness<-function(temp_plot){
 }
 
 
-# Final biomass species removal #####
+# Biomass and sd(biomass) - species removal #####
 removal_exp_final_biomasses<- function(site) {
   # Takes the output of the simulations (complete files). 
   # Extracts final total biomass of the community for each number of species and each condition (decreasing or increasing order of distinctiveness)
@@ -146,3 +146,84 @@ removal_exp_final_biomasses<- function(site) {
   write.table(sd_RAND,paste0("data/processed/sd_biomass_species removal experiments_",site,".txt"))
 }
 
+
+# Productivity - removal experiments ####
+removal_exp_productivity <- function(site){
+  colnames_prod <- read.table("data/colnames_productivityScene.txt",header=T)
+  
+  richness<-c(30:1)
+  
+  # Species removed with increasing functional distinctiveness
+  prod_inc<-c()
+  for(i in c(1:30)){
+    prod <- read.table(paste0("data/raw/output-cmd2_",site,"_increasing.txt/forceps.",site,".site_",i,"_productivityScene.txt"))
+    colnames(prod)<-colnames(colnames_prod)
+    # productivity averaged
+    years_to_keep <- max(prod$date) - c(900,800,700,600,500,400,300,200,100,0)
+    prod_to_keep <- subset(prod,date %in% years_to_keep)
+    # Annual productivity = sum of species specific annual productivities:
+    annual_prod <- c()
+    for(k in years_to_keep){
+      annual_prod <- c(annual_prod, sum(prod_to_keep[which(prod_to_keep$date==k),]$adultProdBiomass) )
+    }
+    prod_inc<-c(prod_inc,mean(annual_prod))
+  }
+  
+  # Species removed with decreasing functional distinctiveness
+  prod_dec<-c()
+  for(i in c(1:30)){
+    prod <- read.table(paste0("data/raw/output-cmd2_",site,"_decreasing.txt/forceps.",site,".site_",i,"_productivityScene.txt"))
+    colnames(prod)<-colnames(colnames_prod)
+    # productivity averaged
+    years_to_keep <- max(prod$date) - c(900,800,700,600,500,400,300,200,100,0)
+    prod_to_keep <- subset(prod,date %in% years_to_keep)
+    # Annual productivity = sum of species specific annual productivities:
+    annual_prod <- c()
+    for(k in years_to_keep){
+      annual_prod <- c(annual_prod, sum(prod_to_keep[which(prod_to_keep$date==k),]$adultProdBiomass) )
+    }
+    prod_dec<-c(prod_dec,mean(annual_prod))
+  }
+
+  
+  # Species removed in random order
+  nb_rand <- 10 # number of random simul
+  RAND <- data.frame(matrix(NA,nrow=30,ncol=nb_rand))
+  
+  for (j in c(1:nb_rand)){
+    prod_ran<-c()
+    for(i in c(1:30)){
+      prod <- read.table(paste0("data/raw/output-cmd2_",site,"_random_",j,".txt/forceps.",site,".site_",i,"_productivityScene.txt"))
+      colnames(prod)<-colnames(colnames_prod)
+      # productivity averaged
+      years_to_keep <- max(prod$date) - c(900,800,700,600,500,400,300,200,100,0)
+      prod_to_keep <- subset(prod,date %in% years_to_keep)
+      # Annual productivity = sum of species specific annual productivities:
+      annual_prod <- c()
+      for(k in years_to_keep){
+        annual_prod <- c(annual_prod, sum(prod_to_keep[which(prod_to_keep$date==k),]$adultProdBiomass) )
+      }
+      prod_ran<-c(prod_ran,mean(annual_prod))
+    }
+    RAND[,j]<-prod_ran
+  }
+  
+  # Confidence interval (NB: to improve!) and .txt export
+  int_min <- c()
+  int_max <- c()
+  mean <- c()
+  for (j in c(1:30)){
+    int_min <- c(int_min, mean(as.numeric(RAND[j,])) + 1.96 * sd(as.numeric(RAND[j,]))/sqrt(10) )
+    int_max <- c(int_max, mean(as.numeric(RAND[j,])) - 1.96 * sd(as.numeric(RAND[j,]))/sqrt(10) )
+    mean <- c(mean, mean(as.numeric(RAND[j,])) )
+  }
+  RAND$int_min <- int_min
+  RAND$int_max <- int_max
+  RAND$mean <- mean
+  RAND$prod_dec <- prod_dec
+  RAND$prod_inc <- prod_inc
+  RAND$nb_removed <- c(0:29)
+
+  write.table(RAND,paste0("data/processed/Productivity_species removal experiments_",site,".txt"))
+}
+  
