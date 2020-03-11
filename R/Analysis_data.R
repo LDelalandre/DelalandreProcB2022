@@ -229,23 +229,24 @@ removal_exp_productivity <- function(site){
   
 # Price format ####
 
-table_threshold_price <- function(order){
-  # Writes a table with the final biomass and abundance of each species, and the number of the simulation
+table_threshold_price <- function(site,order){
+  # Writes a table with the final biomass and abundance of each species, the number of the simulation, and the order of removal
   # Simulation 1: all the species are present in the regional pool.
-  # simul = 3: juste one species remains in the regional pool.
+  # simul = 30: juste one species remains in the regional pool.
   # Order is an element of c("increasing", "decreasing", "random_1" ,  "random_2")
-  res<-read.table(paste0("data/raw/output-cmd2_Bern_",order,".txt/forceps.Bern.site_1_complete.txt"),header=F) 
+  res<-read.table(paste0("data/raw/output-cmd2_",site,"_",order,".txt/forceps.Bern.site_1_complete.txt"),header=F) 
   colnames(res) <- colnames(read.table(here::here("data","colnames_res.txt"),header=T))
   colnames(res)<-colnames_res
   temp_plot<-filter(temporal_plot(res),date==max(unique(res$date)))
   temp_plot$simul <- rep(1,dim(temp_plot)[1])
   data<-temporal_plot_threshold(temp_plot)
   for(i in c(2:30)){
-    res<-read.table(paste0("data/raw/output-cmd2_Bern_",order,".txt/forceps.Bern.site_",i,"_complete.txt"),header=F) 
+    res<-read.table(paste0("data/raw/output-cmd2_",site,"_",order,".txt/forceps.Bern.site_",i,"_complete.txt"),header=F) 
     colnames(res)<-colnames_res
     temp_plot<-filter(temporal_plot(res),date==max(unique(res$date)))
     temp_plot$simul <- rep(i,dim(temp_plot)[1])
     data<-rbind(data,temporal_plot_threshold(temp_plot))
-    write.table(data,paste0("data/processed/table_price_threshold_",order,".txt"))
   }
+  data$order <- rep(order,dim(data)[1])
+  write.table(data,paste0("data/processed/table_price_threshold_",order,".txt"))
 }
