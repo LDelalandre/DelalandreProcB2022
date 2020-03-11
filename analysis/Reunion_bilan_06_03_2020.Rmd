@@ -1,0 +1,120 @@
+---
+title: "Réunion bilan 13/03/2020"
+output: html_document
+---
+
+
+# 1. Calcul de la distinctiveness
+## 1.1 ACP sur les traits indiqués par Xavier (variables quantitatives seulement).
+
+```{r}
+source(here::here("R","Before simulations.R"))
+source(here::here("R","Analysis_data.R"))
+library(FactoMineR)
+library(factoextra)
+SITE <- c("Bern","Bever","Cottbus","Huttwil")
+
+# Compute distinctiveness ####
+# The distinctiveness calculation that I used
+# First, I make a PCA, then I calculate the distinctiveness on the first axis
+
+traits<-read.table(here::here("data","Traits of the species_complete.txt"),header=T)
+c1<-choice_traits_1(traits) # data.frame with the traits of the species
+ACP1<-PCA(c1,graph=F)
+fviz_pca_biplot(ACP1, repel = TRUE, # biplot
+                col.var = "#2E9FDF", # Couleur des variables
+                col.ind = "#696969"  # Couleur des individus 
+)
+
+```
+
+Pourcentage de la variance expliqué par les différents axes :
+```{r}
+fviz_eig(ACP1, addlabels = TRUE, ylim = c(0, 30))
+```
+
+On ne conserve que les quatres premiers axes.
+
+## 1.2 Classement des espèces selon leur distinctiveness
+Le classement des espèces est le suivant (ordre de distinctiveness décroissant) :
+```{r}
+# position of the species on the first four axis
+distACP <- ACP1$ind$coord %>% 
+  as.data.frame() %>%
+  select(Dim.1    ,   Dim.2     ,   Dim.3      ,  Dim.4) %>%
+  traits_dist() # computes the distinctiveness
+distACP$Name<-traits$Name
+
+distACP[order(distACP$Di,decreasing=T),]$Name
+```
+
+# 2. Distinctiveness et effet des espèces sur les fonctions écosystémiques ("removal experiment")
+
+# 2.1 Liens entre distinctiveness et richesse
+Dans le site de Bern, qui est un site "moyen" :
+```{r}
+res <- read.table(here::here("data","forceps.Bern.site_1_complete_une simul avec export tout le long.txt"))
+colnames(res) <- colnames(read.table(here::here("data","colnames_res.txt"),header=T))
+temp_plot <- temporal_plot(res)
+temp_threshold <- temporal_plot_threshold(temp_plot)
+
+dist_sp <- distACP[which(distACP$Di>quantile(distACP$Di,0.75)),]$SName # 25% most distinct species
+s1 <- subset(temp_threshold,species %in% dist_sp)
+s0 <- subset(temp_threshold,!(species %in% dist_sp))
+
+plot(sort(unique(temp_threshold$date)), richness(temp_threshold),type='l',ylim=c(0,23),xlab="Date",ylab="Richness",main="Bern - Richness changes in time (species above biomass threshold)")
+lines(sort(unique(s1$date)), richness(s1),type='l',col="blue")
+lines(sort(unique(s0$date)), richness(s0),type='l',col="red")
+legend(2800, 23, legend=c("All the species", "25% most distinctive species", "75% commonest species"),col=c("black","blue", "red"), lty=1)
+
+```
+
+
+# 2.2 "Removal experiments"
+
+```{r,out.width = "500px"}
+f1 <- here::here("figures","Biomass_Bern.png")
+f2 <- here::here("figures","Biomass_Bever.png")
+f3 <- here::here("figures","Biomass_Cottbus.png")
+f4 <- here::here("figures","Biomass_Huttwil.png")
+knitr::include_graphics(c(f1,f2,f3,f4))
+```
+
+En fait, le seul cas où on a un effet fort du retrait des espèces distinctes sur la biomasse, c'est quand l'une de celles-ci (en l'occurrence Pinus cembra) est également l'espèce dominante en terme de biomasse dans un site (ici Bever). On retrouve ça dans le papier de Garcia-Valdés. C'est donc de la Mass Ratio Hypothesis toute bête, avec par chance l'espèce dominante dans cet environnement qui est également une espèce distinctive.
+
+On le voit ici, où PCem domine, et n'est pas remplacé quand il est enlevé :
+
+```{r,out.width = "500px"}
+knitr::include_graphics(here::here("figures","specific_biomass_Bever_decreasing.png"))
+```
+
+On est donc dans le cas "Dominant distinct traits" du papier de 2017 : une espèce fonctionnellement distinctive est aussi très abondante.  Mais on ne peut pas être dans le cas "Scarce distinct traits", puisqu'une espèce peu abondante aura aussi une faible biomasse, donc une faible valeur de fonction écosystémique.
+On peut s'intéresser à d'autres propriétés écosystémiques : productivité ou sd(biomass).
+
+```{r,out.width = "500px"}
+knitr::include_graphics(here::here("figures","sd_biomass_Bern.png"))
+```
+
+A part ça, je ne vois pas de patron clair.
+
+Qu'est-ce qu'on attendrait comme effet des espèces distinctes ? Raisonner en effets de complémentarité et sélection ? Le modèle peut-il générer de la complémentarité entre espèces, même dans l'hypothèse où on en trouve en conditions réelles ? Et dans cette hypothèse, qu'est-ce qu'on attend biologiquement ?
+
+
+# 3. ForCEEPS et CAFE
+## 3.1 Comparer deux simulations dans un même environnement, mais avec un pool régional d'espèces plus petit que l'autre.
+
+## 3.2 Comparer deux environnements différents ?
+
+
+
+# 4. Utilisation des monocultures ?
+Comment voir si le fait de retirer certaines espèces peut avoir un effet indirect sur la biomasse d'autres espèces ? 
+
+Nos hypothèses biologiques :
+
+- MRH --> quand on retire une espèce de forte biomasse... on perd beaucoup de biomasse (ou de productivité, ou la variance temporelle augmente beaucoup).
+
+- Rareté fonctionnelle --> les espèces les plus distinctes seraient essentielles au fonctionnement de l'écosystème. (A rattacher à l'hypothèse d'assurance, et voir alors en environnement changeant ?)
+
+
+# 5. Comparer une variation infinitésimale d'un paramètre environnemental (Chris Klausmeier)
