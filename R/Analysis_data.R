@@ -4,7 +4,7 @@ library("dplyr")
 temporal_plot<-function(res){ 
   # Returns the biomass and the abundance of each species, every year
   # Compute species biomass (proxy for abundance) for the different years exported from the simulations
-  # res is the data frame of the results complete (e.g. "forceps.Bern.site_1__complete.txt")
+  # res is the data frame of the results complete (e.g. "forceps.Bern.site_1_complete.txt")
   res$species_date<-paste(res$speciesShortName,res$date)
   temp_plot<-data.frame(row.names=rownames(tapply(res$biomass.kg.,res$species_date,sum)))
   temp_plot$biomass <- tapply(res$biomass.kg.,res$species_date,sum)
@@ -23,7 +23,7 @@ temporal_plot<-function(res){
 temporal_plot_threshold<-function(temp_plot){ 
   # Biomass and abundance of each species above an abundance threshold, every year
   # Threshold: every year, we keep the species whose biomass is above 0.001 times the total biomass of that year.
-  # temp_plot is the output of dunction temporal_plot
+  # temp_plot is the output of function temporal_plot
   biomass_year <- c()
   temp_plot_threshold<-temp_plot
   c=1
@@ -41,9 +41,9 @@ richness<-function(temp_plot){
   # Richness and its changes in time
   # Returns a list of the richness value of every year
   rich<-c()
-  dates<-as.character(sort(unique(as.numeric(temp_plot_threshold$date)))) # So that the years are in growing order
+  dates<-as.character(sort(unique(as.numeric(temp_plot$date)))) # So that the years are in growing order
   for (i in dates ){
-    rich<-c(rich, dim(subset(temp_plot_threshold,date==i))[1] )
+    rich<-c(rich, dim(subset(temp_plot,date==i))[1] )
   }
   rich
 }
@@ -227,3 +227,25 @@ removal_exp_productivity <- function(site){
   write.table(RAND,paste0("data/processed/Productivity_species removal experiments_",site,".txt"))
 }
   
+# Price format ####
+
+table_threshold_price <- function(order){
+  # Writes a table with the final biomass and abundance of each species, and the number of the simulation
+  # Simulation 1: all the species are present in the regional pool.
+  # simul = 3: juste one species remains in the regional pool.
+  # Order is an element of c("increasing", "decreasing", "random_1" ,  "random_2")
+  res<-read.table(paste0("data/raw/output-cmd2_Bern_",order,".txt/forceps.Bern.site_1_complete.txt"),header=F) 
+  colnames(res) <- colnames(read.table(here::here("data","colnames_res.txt"),header=T))
+  colnames(res)<-colnames_res
+  temp_plot<-filter(temporal_plot(res),date==max(unique(res$date)))
+  temp_plot$simul <- rep(1,dim(temp_plot)[1])
+  data<-temporal_plot_threshold(temp_plot)
+  for(i in c(2:30)){
+    res<-read.table(paste0("data/raw/output-cmd2_Bern_",order,".txt/forceps.Bern.site_",i,"_complete.txt"),header=F) 
+    colnames(res)<-colnames_res
+    temp_plot<-filter(temporal_plot(res),date==max(unique(res$date)))
+    temp_plot$simul <- rep(i,dim(temp_plot)[1])
+    data<-rbind(data,temporal_plot_threshold(temp_plot))
+    write.table(data,paste0("data/processed/table_price_threshold_",order,".txt"))
+  }
+}
