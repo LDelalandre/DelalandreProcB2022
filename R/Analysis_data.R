@@ -4,7 +4,7 @@ library("dplyr")
 temporal_plot<-function(res){ 
   # Returns the biomass and the abundance of each species, every year
   # Compute species biomass (proxy for abundance) for the different years exported from the simulations
-  # res is the data frame of the results complete (e.g. "forceps.Bren.site_1__complete.txt")
+  # res is the data frame of the results complete (e.g. "forceps.Bern.site_1__complete.txt")
   res$species_date<-paste(res$speciesShortName,res$date)
   temp_plot<-data.frame(row.names=rownames(tapply(res$biomass.kg.,res$species_date,sum)))
   temp_plot$biomass <- tapply(res$biomass.kg.,res$species_date,sum)
@@ -164,7 +164,7 @@ removal_exp_productivity <- function(site){
     # Annual productivity = sum of species specific annual productivities:
     annual_prod <- c()
     for(k in years_to_keep){
-      annual_prod <- c(annual_prod, sum(prod_to_keep[which(prod_to_keep$date==k),]$adultProdBiomass) )
+      annual_prod <- c(annual_prod, sum(prod_to_keep[which(prod_to_keep$date==k),]$adultProdBiomass) + sum(prod_to_keep[which(prod_to_keep$date==k),]$saplingBiomass))
     }
     prod_inc<-c(prod_inc,mean(annual_prod))
   }
@@ -180,7 +180,7 @@ removal_exp_productivity <- function(site){
     # Annual productivity = sum of species specific annual productivities:
     annual_prod <- c()
     for(k in years_to_keep){
-      annual_prod <- c(annual_prod, sum(prod_to_keep[which(prod_to_keep$date==k),]$adultProdBiomass) )
+      annual_prod <- c(annual_prod, sum(prod_to_keep[which(prod_to_keep$date==k),]$adultProdBiomass) + sum(prod_to_keep[which(prod_to_keep$date==k),]$saplingBiomass))
     }
     prod_dec<-c(prod_dec,mean(annual_prod))
   }
@@ -201,7 +201,7 @@ removal_exp_productivity <- function(site){
       # Annual productivity = sum of species specific annual productivities:
       annual_prod <- c()
       for(k in years_to_keep){
-        annual_prod <- c(annual_prod, sum(prod_to_keep[which(prod_to_keep$date==k),]$adultProdBiomass) )
+        annual_prod <- c(annual_prod, sum(prod_to_keep[which(prod_to_keep$date==k),]$adultProdBiomass)+ sum(prod_to_keep[which(prod_to_keep$date==k),]$saplingBiomass) )
       }
       prod_ran<-c(prod_ran,mean(annual_prod))
     }
