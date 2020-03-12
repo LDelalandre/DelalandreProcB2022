@@ -10,29 +10,28 @@ ORDER <- c("increasing", "decreasing", "random_1" ,  "random_2")
 order <- ORDER[1]
 
 source("R/Analysis_data.R")
-for (order in ORDER){
-  table_threshold_price(site,order)
+
+
+# Write the tables ####
+for (site in SITE){
+  # Write tables of final biomasses to be used for the Price analysis
+  for (order in ORDER){
+    table_threshold_price(site,order)
+  }
+  
+  # Compute all pairwise CAFE analysis and export them in a .txt
+  table_price <- read.table(paste0("data/processed/table_price_threshold_",ORDER[1],".txt"),header=T)
+  for (order in ORDER){
+    table_price <- rbind(table_price, read.table(paste0("data/processed/table_price_threshold_",order,".txt"),header=T) )
+  }
+  dat <- pairwise_analysis_price(table_price)
+  write.table(dat,paste0("data/processed/Pairwise_CAFE_values_",site,".txt"))
 }
+
 
 
 # Price analysis ####
-# I follow the steps from the priceTools package examples. To install it from GitHub, see the appendix of Bannar Martin's 2017 paper.
-table_price <- read.table(paste0("data/processed/table_price_threshold_",ORDER[1],".txt"),header=T)
-table_price <- rbind(table_price, read.table(paste0("data/processed/table_price_threshold_",ORDER[2],".txt"),header=T) )
-
-
-pairwise_analysis_price <- function(table_price){
-  # gives a table of CAFE values (SRE.L, etc.) for pairs of simulations. 
-  # Simulation 1: all the species are present in the regional pool. Simulation 30: juste one species remains in the regional pool.
-  data<- table_price
-  grouped.data<-group_by(data,simul,order)
-  res1 <- grouped.data %>%
-    pairwise.price(species="species",func="biomass")
-  pp1<-group.columns(res1,gps=c('simul'),drop=F)
-  dat<-filter(pp1,simul.x < simul.y) # so that I don't have the symmetric comparisons of simul 1 with 2, and of simul 2 with 1, etc.
-}
-
-dat <- pairwise_analysis_price(table_price)
+dat <- read.table("data/processed/Pairwise_CAFE_values.txt")
 
 
 # Look at a specific comparison
