@@ -102,6 +102,88 @@ Qu'est-ce qu'on attendrait comme effet des espèces distinctes ? Raisonner en ef
 
 # 3. ForCEEPS et CAFE
 ## 3.1 Comparer deux simulations dans un même environnement, mais avec un pool régional d'espèces plus petit que l'autre.
+```{r}
+dat <- read.table(here::here("data/processed/Pairwise_CAFE_values_Huttwil.txt"))
+```
+
+### Richesse-Composition
+Effets de richesse et de composition au cours des expérience de retrait d'espèces, sur le site de Bern. En abscisse, le nombre d'espèces retirées du pool régional. On retire ici les espèces distinctes en dernier.
+
+```{r}
+# One order of removal
+dats <- subset(dat,order.x=="increasing" & order.y=="increasing")
+baseline_1 <- filter(dats,simul.x==1)
+
+par(mfrow=c(2,2))
+plot(baseline_1$y.rich - baseline_1$x.rich    ~baseline_1$simul.y,type='l',main="Loss of richness") # Globally, there is a decrease in richness (but with fluctuations) along the simulations. 
+abline(h=0)
+plot(baseline_1$y.func - baseline_1$x.func     ~baseline_1$simul.y,type='l',main="Loss of ecosystem function (biomass)")
+abline(h=0)
+plot(baseline_1$SR~baseline_1$simul.y,main="Richness effect",type="l")
+abline(h=0)
+plot(baseline_1$CE~baseline_1$simul.y,main="Composition effect",type="l")
+abline(h=0)
+```
+Analyse de ces graphes :
+
+- La richesse diminue quand on retire des espèces (normal).
+
+- Cependant, la fonction écosystémique diminue assez peu (même : ne diminue pas), au moins avant le retrait de 25 espèces (panel en haut à droite).
+
+- L'effet de la richesse est globalement négatif (en bas à gauche).
+
+- C'est donc un effet de composition (toujours positif) qui compense la perte de richesse : soit on a gardé les "good performers", soit les espèces restantes ont augmenté leur biomasse individuelle.
+
+Si, maintenant, on enlève les espèces distinctes en premier, l'effet de composition est au départ négatif (en bas à droite). (Et il y a un effet de richesse positif, ce qui est étonnant : on aurait davantage d'espèces présentes à la fin des 2000 ans. Ce qui est possible, puisque j'ai appliqué un seuil sur la biomasse pour qu'une espèce soit considérée comme présente.)
+```{r}
+dats <- subset(dat,order.x=="decreasing" & order.y=="decreasing")
+baseline_1 <- filter(dats,simul.x==1)
+
+par(mfrow=c(2,2))
+plot(baseline_1$y.rich - baseline_1$x.rich    ~baseline_1$simul.y,type='l',main="Loss of richness") # Globally, there is a decrease in richness (but with fluctuations) along the simulations. 
+abline(h=0)
+plot(baseline_1$y.func - baseline_1$x.func     ~baseline_1$simul.y,type='l',main="Loss of ecosystem function (biomass)")
+abline(h=0)
+plot(baseline_1$SR~baseline_1$simul.y,main="Richness effect",type="l")
+abline(h=0)
+plot(baseline_1$CE~baseline_1$simul.y,main="Composition effect",type="l")
+abline(h=0)
+```
+L'effet de composition négatif est-il dû à l'identité des espèces perdues (qui avaient un faible niveau de fonctionnement écosystémique) ou à un changement de niveau de fonctionnement des espèces restantes (qui avaient) ? 
+```{r}
+par(mfrow=c(2,2))
+plot(baseline_1$CDE~baseline_1$simul.y,main="Context dependent effect",type="l")
+abline(h=0)
+plot(baseline_1$SIE.L~baseline_1$simul.y,main="Identity effect of species lost",type="l")
+abline(h=0)
+
+
+```
+L'effet dépendant du contexte est faible, voir négatif. L'effet d'identité des espèces perdues est positif au début : on a donc perdu des espèces qui avaient un faible niveau de fonctionnement écosystémique. 
+
+
+```{r}
+dat <- read.table(here::here("data/processed/Pairwise_CAFE_values_Bever.txt"))
+
+dats <- subset(dat,order.x=="decreasing" & order.y=="decreasing")
+baseline_1 <- filter(dats,simul.x==1)
+
+par(mfrow=c(2,2))
+plot(baseline_1$y.rich - baseline_1$x.rich    ~baseline_1$simul.y,type='l',main="Loss of richness") # Globally, there is a decrease in richness (but with fluctuations) along the simulations. 
+abline(h=0)
+plot(baseline_1$y.func - baseline_1$x.func     ~baseline_1$simul.y,type='l',main="Loss of ecosystem function (biomass)")
+abline(h=0)
+plot(baseline_1$SR~baseline_1$simul.y,main="Richness effect",type="l")
+abline(h=0)
+plot(baseline_1$CE~baseline_1$simul.y,main="Composition effect",type="l")
+abline(h=0)
+```
+
+
+```{r}
+dats %>%
+  subset(simul.x +1 == simul.y)
+```
 
 ## 3.2 Comparer deux environnements différents ?
 

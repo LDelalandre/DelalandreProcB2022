@@ -236,7 +236,7 @@ table_threshold_price <- function(site,order){
   # Simulation 1: all the species are present in the regional pool.
   # simul = 30: juste one species remains in the regional pool.
   # Order is an element of c("increasing", "decreasing", "random_1" ,  "random_2")
-  res<-read.table(paste0("data/raw/output-cmd2_",site,"_",order,".txt/forceps.Bern.site_1_complete.txt"),header=F) 
+  res<-read.table(paste0("data/raw/output-cmd2_",site,"_",order,".txt/forceps.",site,".site_1_complete.txt"),header=F) 
   colnames(res) <- colnames(read.table(here::here("data","colnames_res.txt"),header=T))
   colnames(res)<-colnames_res
   temp_plot<-filter(temporal_plot(res),date==max(unique(res$date)))
