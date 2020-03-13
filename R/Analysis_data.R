@@ -243,14 +243,16 @@ table_threshold_price <- function(site,order){
   temp_plot$simul <- rep(1,dim(temp_plot)[1])
   data<-temporal_plot_threshold(temp_plot)
   for(i in c(2:30)){
-    res<-read.table(paste0("data/raw/output-cmd2_",site,"_",order,".txt/forceps.Bern.site_",i,"_complete.txt"),header=F) 
-    colnames(res)<-colnames_res
-    temp_plot<-filter(temporal_plot(res),date==max(unique(res$date)))
-    temp_plot$simul <- rep(i,dim(temp_plot)[1])
-    data<-rbind(data,temporal_plot_threshold(temp_plot))
+    res<-try(read.table(paste0("data/raw/output-cmd2_",site,"_",order,".txt/forceps.",site,".site_",i,"_complete.txt"),header=F),silent=T) 
+    if (class(res) != "try-error"){ # sometimes, the files are empty, and it returns an error message
+      colnames(res)<-colnames_res
+      temp_plot<-filter(temporal_plot(res),date==max(unique(res$date)))
+      temp_plot$simul <- rep(i,dim(temp_plot)[1])
+      data<-rbind(data,temporal_plot_threshold(temp_plot))
+    }
   }
   data$order <- rep(order,dim(data)[1])
-  write.table(data,paste0("data/processed/table_price_threshold_",order,".txt"))
+  write.table(data,paste0("data/processed/table_price_threshold_",site,"_",order,".txt"))
 }
 
 
