@@ -1,77 +1,64 @@
 library("dplyr")
 library("magrittr")
 library("ggplot2")
+library(gridExtra)
 source("R/Analysis_data.R")
-colnames_mean<-colnames(read.table("data/colnames_mean.txt",header=T)) # idem
-colnames_res<-colnames(read.table("data/colnames_res.txt", header=T))
+source("R/Monocultures_functions.R")
 
-biomass<-c()
-sd_biom<-c()
-for(i in c(1:30)){
-  mean <- read.table(paste0("data/raw/output-cmd2_Bern_monocultures.txt/forceps.Bern.site_",i,"_mean.txt"))
-  # NB it is in the good order because we made the monocultures in the order of the species Id number.
-  colnames(mean)<-colnames_mean
-  # biomass averaged
-  years_to_keep <- max(mean$date) - c(900,800,700,600,500,400,300,200,100,0)
-  meanbiom <- mean(subset(mean,date %in% years_to_keep)$totalBiomass.t.ha.)
-  biomass<-c(biomass,meanbiom)
-  sd_biom<-c(sd_biom,sd(mean$totalBiomass.t.ha.))
+
+site <- SITE[1]
+order <- ORDER[1]
+number <- 1 # number of the simulation. 1: All the species are present. 30: Just one species is left.
+
+# Specific values of biomass and sd(biomass) for the monocultures ####
+specific_val <- specific_values(site)
+
+for (number in c(1:30)){
+  # Comparison of biomasses between monocultures and mixtures
+  biomass_comp <- biomasses(site=site,specific_val=specific_val,number=number,order=order)
+  
+  # Mixture and monoculture specific biomasses f(distinctiveness) ####
+  g1 <- ggplot(biomass_comp,aes(y=Di,x=monoculture_relative,label=species))+
+    geom_point() +
+    labs(x="Relative biomass",y="Distinctiveness") +
+    ggtitle("Monocultures") +
+    ylim(min(biomass_comp$Di),max(biomass_comp$Di)) +
+    geom_label()
+  g2 <- ggplot(biomass_comp,aes(y=Di,x=mixture_relative,label=species))+
+    geom_point() +
+    labs(x="Relative biomass",y="Distinctiveness") +
+    ggtitle("Mixture") +
+    ylim(min(biomass_comp$Di),max(biomass_comp$Di)) +
+    geom_label()
+  
+  ggsave(filename = paste0("figures/Monocultures_",site,"/specific_biomass_mixt_mono_",site,"_",order,"_",number,".png"),
+         plot=grid.arrange(g1,g2))
 }
 
+for (number in c(1:30)){
+  # Comparison of biomasses between monocultures and mixtures
+  biomass_comp <- biomasses(site=site,specific_val=specific_val,number=number,order=order)
+  # Relative decrease in biomass when the species is put in mixture
+  biomass_comp$relat_decr <- (biomass_comp$`monoculture(t/ha)`-biomass_comp$`mixture(t/ha)` )/biomass_comp$`monoculture(t/ha)`
+}
 
-# specific_values: a data frame with final biomass of each monoculture, etc. ####
-specific_values <- read.table("data/raw/distinctiveness of the species.txt",header=T)
-specific_values$biomass_monoculture <- biomass
-specific_values$sd_biom <- sd_biom
-specific_values$Id <- c(0:29)
-specific_values$relative_biomass <- specific_values$biomass / sum(specific_values$biomass)
+plot(biomass_comp$relat_decr~biomass_comp$monoculture_relative)
+plot(biomass_comp$relat_decr~biomass_comp$mixture_relative)
+
+hist(biomass_comp$relat_decr)
+subset(biomass_comp,relat_decr<mean(relat_decr))
 
 
 # Compare specific biomass in monocultures and in the complete mixture ####
-res <- read.table("data/raw/output-cmd2_Bern_decreasing.txt/forceps.Bern.site_1_complete.txt")
-colnames(res)<-colnames_res
-temp_plot <- temporal_plot(res)
-# années sur lesquelles on veut moyenner les résultats.
-# NB : ici, je ne les ai pas dans mon export. A refaire de manière à homogénéiser tout ça. En attendant :
-dates <- as.numeric(max(temp_plot$date))#- c(900,800,700,600,500,400,300,200,100,0)
-years_to_keep <- subset(temp_plot,date %in%dates) # we compute a mean value of biomass on those years
-biomasses <- aggregate(years_to_keep$biomass, list(years_to_keep$species), mean)
-colnames(biomasses) <- c("species","mixture")
-biomasses$mixture <- biomasses$mixture/800 # so that the unit becomes t/ha
-biomasses$mixture <- biomasses$mixture/sum(biomasses$mixture) #to have relative biomass
-
-biom_mono <- c()
-dist <- c()
-for (sp in biomasses$species){
-  biom_mono <- c(biom_mono,specific_values[which(specific_values$SName == sp ),]$biomass)
-  dist <- c(dist,specific_values[which(specific_values$SName == sp ),]$Di)
-}
-biomasses$monoculture <- biom_mono/sum(biom_mono)
-biomasses$Di <- dist
-
-ggplot(biomasses,aes(x=monoculture,y=mixture,label=species))+
+ggplot(biomass_comp,aes(x=monoculture_relative,y=mixture_relative,label=species))+
   geom_point() +
   geom_label()
 
 
 # Specific monoculture biomass f(distinctiveness) ####
-ggplot(specific_values,aes(x=Di,y=biomass,label=SName))+
+ggplot(specific_val,aes(x=Di,y=biomass_monoculture,label=SName))+
   geom_point() +
   geom_label()
-
-# Mixture and monoculture specific biomasses f(distinctiveness) ####
-ggplot(biomasses,aes(y=Di,x=monoculture,label=species))+
-  geom_point() +
-  labs(x="Relative biomass",y="Distinctiveness") +
-  ggtitle("Monocultures") +
-  geom_label()
-ggplot(biomasses,aes(y=Di,x=mixture,label=species))+
-  geom_point() +
-  labs(x="Relative biomass",y="Distinctiveness") +
-  ggtitle("Mixture") +
-  # xlim(0, 0.11) +
-  geom_label()
-
 
 # Species removal ####
 DIST_ORDER <- list(specific_values[order(specific_values$Di,decreasing=T),]$Id, specific_values[order(specific_values$Di,decreasing=F),]$Id)

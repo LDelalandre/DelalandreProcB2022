@@ -1,4 +1,10 @@
 library("dplyr")
+colnames_mean<-colnames(read.table("data/colnames_mean.txt",header=T)) # idem
+colnames_res<-colnames(read.table("data/colnames_res.txt", header=T))
+
+SITE <- c("Bern","Bever","Cottbus","Huttwil")
+ORDER <- c("increasing","decreasing","random_1","random_2","random_3","random_4",
+           "random_5","random_6","random_7","random_8","random_9","random_10")
 
 # Read and process raw data ####
 temporal_plot<-function(res){ 
