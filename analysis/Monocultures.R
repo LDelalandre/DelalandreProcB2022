@@ -7,17 +7,52 @@ source("R/Monocultures_functions.R")
 
 
 site <- SITE[1]
-order <- ORDER[1]
+order <- ORDER[2]
 number <- 1 # number of the simulation. 1: All the species are present. 30: Just one species is left.
 
 # Specific values of biomass and sd(biomass) for the monocultures ####
 specific_val <- specific_values(site)
 
+# Superposition of mixture and monoculture ####
+removal_comparison <- data.frame(matrix(data=c(0:29),ncol=3,nrow=30,dimnames=list(c(1:30),c("Nb_sp_removed","Monoculture_biomass","Mixture_biomass"))))
+for (number in c(1:30)){
+  biomass_comp <- biomasses(site=site,specific_val=specific_val,number=number,order=order)
+  removal_comparison[number,2] <- sum(biomass_comp$`monoculture(t/ha)`)/dim(biomass_comp)[1]
+  removal_comparison[number,3] <- sum(biomass_comp$`mixture(t/ha)`)
+}
+plot = ggplot(removal_comparison,aes(x = Nb_sp_removed))+
+  geom_line(aes(y = Monoculture_biomass, colour = "Monoculture")) + 
+  geom_line(aes(y = Mixture_biomass, colour = "Mixture"))+
+  labs(x="Number of species removed",y="Biomass")+
+  ggtitle(paste0(site,"_",order))
+ggsave(filename = paste0("figures/removal_mixt_mono_",site,"_",order,".png"),
+       plot=plot)
+
+
+# Species removal ####
+DIST_ORDER <- list(specific_val[order(specific_val$Di,decreasing=T),]$Id, specific_val[order(specific_val$Di,decreasing=F),]$Id)
+dist_order <- DIST_ORDER[[2]]
+removal_biomass <- c()
+for (i in 1:30){
+  B <- specific_val %>%
+    subset(Id %in% dist_order[c(i:30)])%>% # select species in
+    select(biomass_monoculture)
+  B <- sum(B)/length(c(i:30))
+  # B <- sum(B)/ tot_biomass
+  # B <- sum(B)
+  removal_biomass <- c(removal_biomass,B)
+}
+plot(c(1:30),removal_biomass)
+
+
+  
+
+
+# Mixture and monoculture specific biomasses f(distinctiveness) ####
 for (number in c(1:30)){
   # Comparison of biomasses between monocultures and mixtures
   biomass_comp <- biomasses(site=site,specific_val=specific_val,number=number,order=order)
   
-  # Mixture and monoculture specific biomasses f(distinctiveness) ####
   g1 <- ggplot(biomass_comp,aes(y=Di,x=monoculture_relative,label=species))+
     geom_point() +
     labs(x="Relative biomass",y="Distinctiveness") +
@@ -60,20 +95,7 @@ ggplot(specific_val,aes(x=Di,y=biomass_monoculture,label=SName))+
   geom_point() +
   geom_label()
 
-# Species removal ####
-DIST_ORDER <- list(specific_values[order(specific_values$Di,decreasing=T),]$Id, specific_values[order(specific_values$Di,decreasing=F),]$Id)
-dist_order <- DIST_ORDER[[2]]
-removal_biomass <- c()
-for (i in 1:30){
-  B <- specific_values %>%
-    subset(Id %in% dist_order[c(i:30)])%>% # select species in
-    select(biomass)
-  B <- sum(B)/length(c(i:30))
-  # B <- sum(B)/ tot_biomass
-  # B <- sum(B)
-  removal_biomass <- c(removal_biomass,B)
-}
-plot(c(1:30),removal_biomass)
+
 
 # Search for and explanation to the shape of the curves ####
 x=c(1:30)

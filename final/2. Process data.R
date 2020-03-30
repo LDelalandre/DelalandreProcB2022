@@ -1,24 +1,26 @@
 source("R/Analysis_data.R")
-library(ggplot2)
+source("R/Common variables.R")
 
-SITE <- c("Bern","Bever","Cottbus","Huttwil")
-
-# Biomass and sd(biomass) removal experiments ####
+# Biomass removal experiments ####
 for (site in SITE){ # Write a table with the final biomasses of all sets of simulations for each site
   # NB: Takes up to a few minuts to run!
-  removal_exp_final_biomasses(site=site) 
+  specific_biomass_final(site=site) 
 }
 
+for (site in SITE){
+  total_biomass_final(site)
+  confidence_interval_biomass(site)
+}
 
 # plot the final biomasses in each condition
 # more precisely, it is the averaged biomass on 10 evenly-spaced points in time during the last 1000 years.
 for (site in SITE){
-  result <- read.table(paste0("data/processed/Biomass_species removal experiments_",site,".txt"))
-  ggplot(result,aes(x=nb_removed,y=biomass_dec,color="Removing distinct species first")) +
-    labs(x="Number of species removed",y="Total biomass (T/ha)") +
+  result <- read.table(paste0("data/processed/total_biomass_final_",site,"_with interval.txt"),header=T)
+  ggplot(result,aes(x=simul-1,y=decreasing,color="Removing distinct species first")) +
+    labs(x="Number of species removed",y="Total biomass (t/ha)") +
     geom_line()+
     geom_ribbon(aes(ymin=int_min, ymax=int_max),fill="grey60", alpha=0.5,colour="black") +
-    geom_line(aes(x=nb_removed,y=biomass_inc, color="Removing distinct species last")) +
+    geom_line(aes(x=simul-1,y=increasing, color="Removing distinct species last")) +
     theme(legend.position = "bottom") +
     ggtitle(site) +
     ggsave(paste0("figures/Biomass_",site,".png"))

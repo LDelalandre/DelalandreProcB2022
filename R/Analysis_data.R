@@ -1,10 +1,4 @@
-library("dplyr")
-colnames_mean<-colnames(read.table("data/colnames_mean.txt",header=T)) # idem
-colnames_res<-colnames(read.table("data/colnames_res.txt", header=T))
-
-SITE <- c("Bern","Bever","Cottbus","Huttwil")
-ORDER <- c("increasing","decreasing","random_1","random_2","random_3","random_4",
-           "random_5","random_6","random_7","random_8","random_9","random_10")
+source("R/Common variables.R")
 
 # Read and process raw data ####
 temporal_plot<-function(res){ 
@@ -55,68 +49,57 @@ richness<-function(temp_plot){
 }
 
 
-# Biomass and sd(biomass) - species removal #####
-removal_exp_final_biomasses<- function(site) {
-  # Takes the output of the simulations (complete files). 
-  # Extracts final total biomass of the community for each number of species and each condition (decreasing or increasing order of distinctiveness)
-  # Writes a data frame with these informations in a .txt file
-  
-  # Data for having the names of the columns
-  colnames_mean<-colnames(read.table("data/colnames_mean.txt",header=T)) # idem
-  colnames_res<-colnames(read.table("data/colnames_res.txt", header=T))
-  
-  richness<-c(30:1)
-  
-  # Species removed with increasing functional distinctiveness
-  biomass_inc<-c()
-  sd_biom_inc<-c()
-  for(i in c(1:30)){
-    mean<-read.table(paste0("data/raw/output-cmd2_",site,"_increasing.txt/forceps.",site,".site_",i,"_mean.txt"))
-    colnames(mean)<-colnames_mean
-    # biomass averaged
-    years_to_keep <- max(mean$date) - c(900,800,700,600,500,400,300,200,100,0)
-    meanbiom <- mean(subset(mean,date %in% years_to_keep)$totalBiomass.t.ha.)
-    biomass_inc<-c(biomass_inc,meanbiom)
-    sd_biom_inc<-c(sd_biom_inc,sd(mean$totalBiomass.t.ha.))
-  }
-  
-  
-  
-  # Species removed with decreasing functional distinctiveness
-  biomass_dec<-c()
-  sd_biom_dec<-c()
-  for(i in c(1:30)){
-    mean<-read.table(paste0("data/raw/output-cmd2_",site,"_decreasing.txt/forceps.",site,".site_",i,"_mean.txt"))
-    colnames(mean)<-colnames_mean
-    # biomass averaged
-    years_to_keep <- max(mean$date) - c(900,800,700,600,500,400,300,200,100,0)
-    meanbiom <- mean(subset(mean,date %in% years_to_keep)$totalBiomass.t.ha.)
-    biomass_dec<-c(biomass_dec,meanbiom)
-    sd_biom_dec<-c(sd_biom_dec,sd(mean$totalBiomass.t.ha.))
-  }
-  
-  # Species removed in random order
-  nb_rand <- 10 # number of random simul
-  RAND <- data.frame(matrix(NA,nrow=30,ncol=nb_rand))
-  sd_RAND <- RAND
-  for (j in c(1:nb_rand)){
-    biomass_ran<-c()
-    sd_biomass_ran<-c()
-    for(i in c(1:30)){
-      mean<-read.table(paste0("data/raw/output-cmd2_",site,"_random_",j,".txt/forceps.",site,".site_",i,"_mean.txt"))
-      colnames(mean)<-colnames_mean
-      # biomass averaged
-      years_to_keep <- max(mean$date) - c(900,800,700,600,500,400,300,200,100,0)
-      meanbiom <- mean(subset(mean,date %in% years_to_keep)$totalBiomass.t.ha.)
-      biomass_ran <- c(biomass_ran, meanbiom)
-      sd_biomass_ran <- c(sd_biomass_ran, sd(mean$totalBiomass.t.ha.))
+# Biomass - species removal #####
+specific_biomass_final <- function(site) {
+  # 1. Takes the output of the simulations (complete files).
+  # 2. Selects biomass above threshold
+  # 3. Selects a subset of ten years and averages the biomass of each species on these years
+  # 4. Writes a data frame (e.g. specific_biomass_final_Bern.txt) whose columns are:
+  # "species"	"mixture(t/ha)"	"mixture_relative"	"site"	"order"	"simul"
+  BIOMASSES <- as.data.frame(matrix(nrow=0,ncol=4,dimnames = list(NULL,c("species", "mixture(t/ha)", "mixture_relative", "simul"))))
+  for (order in ORDER){
+    biomass_inc<-c()
+    sd_biom_inc<-c()
+    for(number in c(1:30)){
+      res <- read.table(paste0("data/raw/output-cmd2_",site,"_",order,".txt/forceps.",site,".site_",number,"_complete.txt"))
+      colnames(res) <- colnames_res
+      temp_plot <- temporal_plot_threshold(temporal_plot(res))
+      
+      dates <- as.numeric(max(temp_plot$date))- c(900,800,700,600,500,400,300,200,100,0) # years on which we average the biomass
+      years_to_keep <- subset(temp_plot,date %in%dates) # we compute a mean value of biomass on those years
+      
+      biomasses <- aggregate(years_to_keep$biomass, list(years_to_keep$species), mean) # mean per species
+      colnames(biomasses) <- c("species","mixture(t/ha)")
+      biomasses$'mixture(t/ha)' <- biomasses$'mixture(t/ha)'*10/800/Nbpatches # so that the unit becomes t/ha
+      biomasses$mixture_relative <- biomasses$'mixture(t/ha)'/sum(biomasses$'mixture(t/ha)') #to have relative biomass
+      biomasses$site <- site
+      biomasses$order <- order
+      biomasses$simul <- number
+      BIOMASSES <- rbind(BIOMASSES,biomasses)
+      
     }
-    RAND[,j]<-biomass_ran
-    sd_RAND[,j]<- sd_biomass_ran
   }
+  write.table(BIOMASSES,paste0("data/processed/specific_biomass_final_",site,".txt"),sep="\t",row.names=F)
+}  
+
+total_biomass_final <- function(site){
+  # 1. Reads the data frame printed by specific_biomass_final
+  # 2. Sums the specific biomasses for each simul
+  # 3. Writes a data.frame (e.g. total_biomass_final_Bern.txt)whose colnames are:
+  # "site"	"simul"	"decreasing"	"increasing"	"random_1"	"random_10"	"random_2"	"random_3"	etc.
+  # which gives the biomasses (t/ha) for each simul in each order in a given site.
+  BIOMASSES_sp <- read.table(paste0("data/processed/specific_biomass_final_",site,".txt"),header=T)
+  BIOMASSES_tot <- aggregate(BIOMASSES_sp$mixture.t.ha.,list(site = BIOMASSES_sp$site,order = BIOMASSES_sp$order,simul = BIOMASSES_sp$simul),FUN=sum)# sum of the biomasses of the species
   
-  
-  # Je construis un intervalle de confiance comme si les observations suivaient une loi normale... A am?liorer.
+  biomass_per_order <- spread(BIOMASSES_tot,order,x) # data frame with each order in column
+  write.table(biomass_per_order,paste0("data/processed/total_biomass_final_",site,".txt"),sep="\t",row.names=F)
+}
+
+
+confidence_interval_biomass <- function(site){
+  # Computes the confidence interval on the table written by tetal_biomass_final
+  biomass_per_order <- read.table(paste0("data/processed/total_biomass_final_",site,".txt"),header=T)
+  RAND <- biomass_per_order[,5:14]
   int_min <- c()
   int_max <- c()
   mean <- c()
@@ -125,35 +108,20 @@ removal_exp_final_biomasses<- function(site) {
     int_max <- c(int_max, mean(as.numeric(RAND[j,])) - 1.96 * sd(as.numeric(RAND[j,]))/sqrt(10) )
     mean <- c(mean, mean(as.numeric(RAND[j,])) )
   }
-  RAND$int_min <- int_min
-  RAND$int_max <- int_max
-  RAND$mean <- mean
-  RAND$biomass_dec <- biomass_dec
-  RAND$biomass_inc <- biomass_inc
-  RAND$nb_removed <- c(0:29)
+  biomass_per_order$int_min <- int_min
+  biomass_per_order$int_max <- int_max
+  biomass_per_order$mean <- mean
   
-  # Same thing for sd(biomass). NB: it is computed on the biomass along ALL the simulation, includind the succession phase.
-  sd_int_min <- c()
-  sd_int_max <- c()
-  sd_mean <- c()
-  for (j in c(1:30)){
-    sd_int_min <- c(sd_int_min, mean(as.numeric(sd_RAND[j,])) + 1.96 * sd(as.numeric(sd_RAND[j,]))/sqrt(10) )
-    sd_int_max <- c(sd_int_max, mean(as.numeric(sd_RAND[j,])) - 1.96 * sd(as.numeric(sd_RAND[j,]))/sqrt(10) )
-    sd_mean <- c(sd_mean, mean(as.numeric(sd_RAND[j,])) )
-  }
-  sd_RAND$int_min <- sd_int_min
-  sd_RAND$int_max <- sd_int_max
-  sd_RAND$mean <- sd_mean
-  sd_RAND$sd_biomass_dec <- sd_biom_dec
-  sd_RAND$sd_biomass_inc <- sd_biom_inc
-  sd_RAND$nb_removed <- c(0:29)
-  
-  write.table(RAND,paste0("data/processed/Biomass_species removal experiments_",site,".txt"))
-  write.table(sd_RAND,paste0("data/processed/sd_biomass_species removal experiments_",site,".txt"))
+  write.table(biomass_per_order,paste0("data/processed/total_biomass_final_",site,"_with interval.txt"),sep="\t",row.names=F)
 }
 
+# sd(biomass) - removal experiments ####
 
 # Productivity - removal experiments ####
+
+# sd(Productivity) - removal experiments ####
+
+# Former Productivity - removal experiments ####
 removal_exp_productivity <- function(site){
   colnames_prod <- read.table("data/colnames_productivityScene.txt",header=T)
   
@@ -230,97 +198,5 @@ removal_exp_productivity <- function(site){
   RAND$prod_inc <- prod_inc
   RAND$nb_removed <- c(0:29)
 
-  write.table(RAND,paste0("data/processed/Productivity_species removal experiments_",site,".txt"))
-}
-  
-
-
-# Price analysis ####
-
-table_threshold_price <- function(site,order){
-  # Writes a table with the final biomass and abundance of each species, the number of the simulation, and the order of removal
-  # Simulation 1: all the species are present in the regional pool.
-  # simul = 30: juste one species remains in the regional pool.
-  # Order is an element of c("increasing", "decreasing", "random_1" ,  "random_2")
-  res<-read.table(paste0("data/raw/output-cmd2_",site,"_",order,".txt/forceps.",site,".site_1_complete.txt"),header=F) 
-  colnames(res) <- colnames(read.table(here::here("data","colnames_res.txt"),header=T))
-  colnames(res)<-colnames_res
-  temp_plot<-filter(temporal_plot(res),date==max(unique(res$date)))
-  temp_plot$simul <- rep(1,dim(temp_plot)[1])
-  data<-temporal_plot_threshold(temp_plot)
-  for(i in c(2:30)){
-    res<-try(read.table(paste0("data/raw/output-cmd2_",site,"_",order,".txt/forceps.",site,".site_",i,"_complete.txt"),header=F),silent=T) 
-    if (class(res) != "try-error"){ # sometimes, the files are empty, and it returns an error message
-      colnames(res)<-colnames_res
-      temp_plot<-filter(temporal_plot(res),date==max(unique(res$date)))
-      temp_plot$simul <- rep(i,dim(temp_plot)[1])
-      data<-rbind(data,temporal_plot_threshold(temp_plot))
-    }
-  }
-  data$order <- rep(order,dim(data)[1])
-  write.table(data,paste0("data/processed/table_price_threshold_",site,"_",order,".txt"))
-}
-
-
-pairwise_analysis_price <- function(table_price){
-  # Returns a table of CAFE values (SRE.L, etc.) for pairs of simulations. 
-  # Simulation 1: all the species are present in the regional pool. Simulation 30: juste one species remains in the regional pool.
-  # I follow the steps from the priceTools package examples. To install it from GitHub, see the appendix of Bannar Martin's 2017 paper.
-  data<- table_price
-  grouped.data<-group_by(data,simul,order)
-  res1 <- grouped.data %>%
-    pairwise.price(species="species",func="biomass")
-  pp1<-group.columns(res1,gps=c('simul'),drop=F)
-  dat<-filter(pp1,simul.x < simul.y) # so that I don't have the symmetric comparisons of simul 1 with 2, and of simul 2 with 1, etc.
-  
-  dat
-}
-
-
-CAFE_graphics <- function(dat1){
-  # Returns the three plots from Bannar-Martin's paper.
-  # dat1 is just one line from the pairwise.price analysis, i.e. a comparison between two communities.
-  # e.g. dat1 <- read.table("data/processed/Pairwise_CAFE_values_Bern.txt",header=T)
-  
-  # Richness-Composition vectors
-  s1<-leap.zig(dat1,type='bef',standardize=FALSE,
-               # xlim=c(10,40),ylim=c(50,300),
-               error.bars=F,
-               vectors=T,raw.points = F,legend=TRUE) +
-    scale_y_continuous("Ecosystem function \n(biomass (g))",
-                       breaks=c(50,100,150,200,250,300))+
-    annotate("text", x = mean(dat1$x.rich), y = mean(dat1$x.func), 
-             label = "*",size=8)+
-    annotate("segment", x = mean(dat1$y.rich)-1, xend = mean(dat1$y.rich)+1, 
-             y = mean(dat1$y.func), yend = mean(dat1$y.func),colour = "black") +
-    ggtitle("Richness-Composition")
-  # s1
-  
-  # Community assembly vectors
-  s2<-leap.zig(dat1,type='cafe',standardize=FALSE,
-               # xlim=c(10,40),ylim=c(50,300),
-               error.bars=F,
-               vectors=T,raw.points = F,legend=TRUE)+
-    scale_y_continuous("",breaks=c(50,100,150,200,250,300))+
-    annotate("text", x = mean(dat1$x.rich), y = mean(dat1$x.func), 
-             label = "*",size=8)+
-    annotate("segment", x = mean(dat1$y.rich)-1, xend = mean(dat1$y.rich)+1, 
-             y = mean(dat1$y.func), yend = mean(dat1$y.func),colour = "black")+
-    ggtitle("Community Assembly")
-  # s2
-  
-  # 5-part Price vectors
-  s3<-leap.zig(dat1,type='price',standardize=FALSE,
-               # xlim=c(10,40),ylim=c(50,300),
-               error.bars=F,
-               vectors=T,raw.points = F,legend=TRUE)+
-    scale_y_continuous("",breaks=c(50,100,150,200,250,300))+
-    annotate("text", x = mean(dat1$x.rich), y = mean(dat1$x.func), 
-             label = "*",size=8)+
-    annotate("segment", x = mean(dat1$y.rich)-1, xend = mean(dat1$y.rich)+1, 
-             y = mean(dat1$y.func), yend = mean(dat1$y.func),colour = "black")+
-    ggtitle("5-part Price")
-  # s3
-  
-  grid.arrange(s1,s2,s3,nrow=2)
+  write.table(RAND,paste0("data/processed/Productivity_species removal experiments_",site,".txt"),sep="\t")
 }
