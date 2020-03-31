@@ -9,7 +9,7 @@ specific_values <- function(site){
   biomass<-c()
   sd_biom<-c()
   for(i in c(1:30)){
-    mean <- read.table(paste0("data/raw/output-cmd2_",site,"_monocultures.txt/forceps.",site,".site_",i,"_mean.txt"))
+    mean <- read.table(paste0("data/raw/output-cmd2_",site,"_monoculture.txt/forceps.",site,".site_",i,"_mean.txt"))
     # NB it is in the good order because we made the monocultures in the order of the species Id number.
     colnames(mean)<-colnames_mean
     # biomass averaged
@@ -29,7 +29,7 @@ specific_values <- function(site){
 }
 
 
-biomasses <- function(site,specific_val,number,order){
+biomasses <- function(site,specific_val){
   # returns a data frame with colnames:
   # species mixture.t.ha. mixture_relative site      order simul monoculture(t/ha) monoculture_relative       Di
   # Each species that apears is a species that is present at the end of a mixture simulation. Consequently, we don't have all the species.
@@ -38,18 +38,29 @@ biomasses <- function(site,specific_val,number,order){
   # Example for the variables: site="Bern" ; specific_val = specific_values(site) ; number=1 ; order="decreasing" ; Nbpatches = 10 (ou 50)
   # Number is the number of the simulation (1: we didn't remove any species, until 30: there is only one species left)
   biomasses <- read.table(paste0("data/processed/specific_biomass_final_",site,".txt"),header=T)
+  
+  # Add a column with absolute biomass of the same species in monoculture
   biom_mono <- c()
   dist <- c()
-  for (sp in biomasses$species){
-    # non, à faire par simulation !!
-    biom_mono <- c(biom_mono,specific_val[which(specific_val$SName == sp ),]$'monoculture(t/ha)')
-    dist <- c(dist,specific_val[which(specific_val$SName == sp ),]$Di)
+  for (i in 1:dim(biomasses)[1]){
+    biom_mono <- c(biom_mono,specific_val[which(specific_val$SName == as.character(biomasses[i,]$species) ),]$'monoculture(t/ha)')
+    dist <- c(dist,specific_val[which(specific_val$SName == as.character(biomasses[i,]$species) ),]$Di)
   }
   biomasses$`monoculture(t/ha)` <- biom_mono
-  biomasses$monoculture_relative <- biom_mono/sum(biom_mono) # non a faire par simulation !!!
-  biomasses$Di <- dist
+  biomasses$dist <- dist
   
-  write.table(biomasses,paste0("data/processed/specific_biomass_final_with monocultures",site,"_",order,"_",number,".txt"),row.names=F)
-  # non, faire un document txt pour tous les orders et simul pour un site
+  # Add a column with relative biomass of the same species in a mix of monocultures with the same species
+  mono_sum <- aggregate(biomasses$`monoculture(t/ha)`, list(order=biomasses$order,simul=biomasses$simul), sum) # mean per species
+  biom_relat <- c()
+  for (i in 1:dim(biomasses)[1]){
+    summed_biomass_mono <- mono_sum[which(mono_sum$order==biomasses[i,]$order & mono_sum$simul==biomasses[i,]$simul),]$x
+    biom_relat[i] <- biomasses[i,]$`monoculture(t/ha)`/summed_biomass_mono
+  }
+  biomasses$monoculture_relative <- biom_relat
+  
+  # vérification : somme des biomasses relatives = 1. Ok.
+  # aggregate(biomasses$monoculture_relative,list(order=biomasses$order,simul=biomasses$simul),FUN=sum)
+  # sum(subset(biomasses,simul==1&order=="decreasing")$monoculture_relative)
+  biomasses
 }
 

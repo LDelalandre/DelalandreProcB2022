@@ -1,10 +1,5 @@
-library("dplyr")
-library("magrittr")
-library(FactoMineR)
-library("funrar")
-
 source("R/Before simulations.R")
-SITE <- c("Bern","Bever","Cottbus","Huttwil")
+source("R/Common variables.R")
 
 # Compute distinctiveness ####
 # The distinctiveness calculation that I used
@@ -18,7 +13,7 @@ ACP1<-PCA(c1)
 distACP <- ACP1$ind$coord %>% 
   as.data.frame() %>%
   select(Dim.1    ,   Dim.2     ,   Dim.3      ,  Dim.4) %>%
-  traits_dist()
+  traits_dist() # here we compute the functional distinctiveness
 distACP$SName<-rownames(distACP)
 
 distinct_tot <-  distACP
@@ -26,15 +21,12 @@ distinct_tot <-  distACP
 write.table(select(distinct_tot,Di,SName),"data/raw/distinctiveness of the species.txt",row.names=F)
 
 # Write command files ####
-length <- 2000
-yearstobejumped <- 999
-timestep <- 100
-
 distinct_tot <- read.table("data/raw/distinctiveness of the species.txt",header = T)
 for (site in SITE){
   Cmd_decr(distinct_tot,length, yearstobejumped, timestep,site)
   Cmd_incr(distinct_tot,length, yearstobejumped, timestep,site)
   Cmd_rand(distinct_tot,length, yearstobejumped, timestep,site)
+  Cmd_mono(distinct_tot,length, yearstobejumped, timestep,site)
 }
 
 

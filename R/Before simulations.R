@@ -139,4 +139,24 @@ Cmd_rand<-function(distinct_tot,length,yearstobejumped,timestep,site){
   }
 }
 
-
+Cmd_mono<-function(distinct_tot,length,yearstobejumped,timestep,site){  
+  # Write Cmd file with species removed from the least to the most distinctive
+  sink(paste0("data/raw/cmd2_",site,"_monoculture.txt"))
+  cat("# Forceps script command file, format SimulationCommandReader2 (Xavier Morin)")
+  cat("\n")
+  cat("\n")
+  cat(paste0("setupFileName = forceps.setup_",site))
+  cat("\n")
+  cat(paste0("numberOfYearsToBeJumped = ",yearstobejumped))
+  cat("\n")
+  cat(paste0("exportTimeStep = ",timestep))
+  cat("\n")
+  cat("\n")
+  cat("#siteFileName	climateFileName	numberOfYears	potentialSpeciesList")
+  cat("\n")
+  for (i in 0:29){
+    cat(paste0("forceps.",site,".site	forceps.climate.",site,".txt	",length,"	"),i)
+    cat("\n")
+  }
+  sink()
+}

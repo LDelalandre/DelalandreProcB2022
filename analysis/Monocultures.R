@@ -1,9 +1,7 @@
-library("dplyr")
-library("magrittr")
-library("ggplot2")
 library(gridExtra)
 source("R/Analysis_data.R")
 source("R/Monocultures_functions.R")
+source("R/Common variables.R")
 
 
 site <- SITE[1]
@@ -12,8 +10,11 @@ number <- 1 # number of the simulation. 1: All the species are present. 30: Just
 
 # Specific values of biomass and sd(biomass) for the monocultures ####
 specific_val <- specific_values(site)
+biomass <- biomasses(site = "Bever",specific_val = specific_val)
+write.table(biomass,paste0("data/processed/specific_biomass_final_",site,"_with monocultures.txt"),row.names=F,sep="\t")
 
 # Superposition of mixture and monoculture ####
+# NB CHANGE IT FOR READ.TABLES
 removal_comparison <- data.frame(matrix(data=c(0:29),ncol=3,nrow=30,dimnames=list(c(1:30),c("Nb_sp_removed","Monoculture_biomass","Mixture_biomass"))))
 for (number in c(1:30)){
   biomass_comp <- biomasses(site=site,specific_val=specific_val,number=number,order=order)

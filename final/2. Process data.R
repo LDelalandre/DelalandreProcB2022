@@ -4,12 +4,15 @@ source("R/Common variables.R")
 # Biomass removal experiments ####
 for (site in SITE){ # Write a table with the final biomasses of all sets of simulations for each site
   # NB: Takes up to a few minuts to run!
-  specific_biomass_final(site=site) 
+  BIOMASSES <- specific_biomass_final(site=site) 
+  write.table(BIOMASSES,paste0("data/processed/specific_biomass_final_",site,".txt"),sep="\t",row.names=F)
 }
 
 for (site in SITE){
-  total_biomass_final(site)
-  confidence_interval_biomass(site)
+  biomass_per_order <- total_biomass_final(site)
+  write.table(biomass_per_order,paste0("data/processed/total_biomass_final_",site,".txt"),sep="\t",row.names=F)
+  biomass_per_order2 <- confidence_interval_biomass(site)
+  write.table(biomass_per_order2,paste0("data/processed/total_biomass_final_",site,"_with interval.txt"),sep="\t",row.names=F)
 }
 
 # plot the final biomasses in each condition
