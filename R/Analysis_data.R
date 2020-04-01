@@ -118,7 +118,54 @@ confidence_interval_biomass <- function(site){
 }
 
 # sd(biomass) - removal experiments ####
+sd_biomass_specific <- function(site){
+  
+  SIGMA <- NULL
+  for (order in ORDER){
+    for(number in c(1:30)){
+      res<-try(read.table(paste0("data/raw/output-cmd2_",site,"_",order,".txt/forceps.",site,".site_",number,"_complete.txt")),silent=T) 
+      if (class(res) != "try-error"){# sometimes, the files are empty, and it returns an error message
+        colnames(res) <- colnames_res
+        int <- temporal_plot(res)
+        temp_plot <- temporal_plot_threshold(int) # NB: if error here, don't forget to charge the package "dplyr"
+        temp_plot$biomass <- temp_plot$biomass/(1000*0.08*Nbpatches) # so that unit is t/ha
+        sigma <- aggregate(temp_plot$biomass, list(temp_plot$species), sd)
+        colnames(sigma) <- c("species","sd_biomass")
+        sigma$mean_biomass <- aggregate(temp_plot$biomass, list(temp_plot$species), mean)$x
+        sigma$CV <- sigma$sd_biomass/sigma$mean_biomass
+        sigma$site <- site
+        sigma$order <- order
+        sigma$simul <- number
 
+        SIGMA <- rbind(SIGMA,sigma)
+      }
+    }
+  }
+  SIGMA
+}
+
+sd_biomass_tot <- function(site){
+  SIGMA <- NULL
+  for (order in ORDER){
+    for(number in c(1:30)){
+      res<-try(read.table(paste0("data/raw/output-cmd2_",site,"_",order,".txt/forceps.",site,".site_",number,"_complete.txt")),silent=T) 
+      if (class(res) != "try-error"){# sometimes, the files are empty, and it returns an error message
+        colnames(res) <- colnames_res
+        int <- temporal_plot(res)
+        temp_plot <- temporal_plot_threshold(int) # NB: if error here, don't forget to charge the package "dplyr"
+        temp_plot$biomass <- temp_plot$biomass/(1000*0.08*Nbpatches) # so that unit is t/ha
+        summed <- aggregate(temp_plot$biomass,list(temp_plot$date),sum)
+        sigma <- sd(summed$x)
+        mu <- mean(summed$x)
+        CV <- sigma/mu
+        sigma <- data.frame(sd_biomass=sigma,mean_biomass=mu,CV,site,order,number)
+        
+        SIGMA <- rbind(SIGMA,sigma)
+      }
+    }
+  }
+  SIGMA
+}
 # Productivity - removal experiments ####
 
 # sd(Productivity) - removal experiments ####
