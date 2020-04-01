@@ -50,7 +50,7 @@ richness<-function(temp_plot){
 
 
 # Biomass - species removal #####
-specific_biomass_final <- function(site) {
+biomass_specific <- function(site) {
   # 1. Takes the output of the simulations (complete files).
   # 2. Selects biomass above threshold
   # 3. Selects a subset of ten years and averages the biomass of each species on these years
@@ -84,42 +84,21 @@ specific_biomass_final <- function(site) {
   BIOMASSES
 }  
 
-total_biomass_final <- function(site){
+biomas_tot <- function(site){
   # 1. Reads the data frame printed by specific_biomass_final
   # 2. Sums the specific biomasses for each simul
   # 3. Returns a data.frame (e.g. total_biomass_final_Bern.txt)whose colnames are:
   # "site"	"simul"	"decreasing"	"increasing"	"random_1"	"random_10"	"random_2"	"random_3"	etc.
   # which gives the biomasses (t/ha) for each simul in each order in a given site.
-  BIOMASSES_sp <- read.table(paste0("data/processed/specific_biomass_final_",site,".txt"),header=T)
+  BIOMASSES_sp <- read.table(paste0("data/processed/biomass_specific_",site,".txt"),header=T)
   BIOMASSES_tot <- aggregate(BIOMASSES_sp$mixture.t.ha.,list(site = BIOMASSES_sp$site,order = BIOMASSES_sp$order,simul = BIOMASSES_sp$simul),FUN=sum)# sum of the biomasses of the species
   
   biomass_per_order <- spread(BIOMASSES_tot,order,x) # data frame with each order in column
   biomass_per_order
 }
 
-
-confidence_interval_biomass <- function(site){
-  # Computes the confidence interval on the table written by tetal_biomass_final
-  biomass_per_order <- read.table(paste0("data/processed/total_biomass_final_",site,".txt"),header=T)
-  RAND <- biomass_per_order[,5:14]
-  int_min <- c()
-  int_max <- c()
-  mean <- c()
-  for (j in c(1:30)){
-    int_min <- c(int_min, mean(as.numeric(RAND[j,])) + 1.96 * sd(as.numeric(RAND[j,]))/sqrt(10) )
-    int_max <- c(int_max, mean(as.numeric(RAND[j,])) - 1.96 * sd(as.numeric(RAND[j,]))/sqrt(10) )
-    mean <- c(mean, mean(as.numeric(RAND[j,])) )
-  }
-  biomass_per_order$int_min <- int_min
-  biomass_per_order$int_max <- int_max
-  biomass_per_order$mean <- mean
-  
-  biomass_per_order
-}
-
 # sd(biomass) - removal experiments ####
 sd_biomass_specific <- function(site){
-  
   SIGMA <- NULL
   for (order in ORDER){
     for(number in c(1:30)){
@@ -130,9 +109,9 @@ sd_biomass_specific <- function(site){
         temp_plot <- temporal_plot_threshold(int) # NB: if error here, don't forget to charge the package "dplyr"
         temp_plot$biomass <- temp_plot$biomass/(1000*0.08*Nbpatches) # so that unit is t/ha
         sigma <- aggregate(temp_plot$biomass, list(temp_plot$species), sd)
-        colnames(sigma) <- c("species","sd_biomass")
-        sigma$mean_biomass <- aggregate(temp_plot$biomass, list(temp_plot$species), mean)$x
-        sigma$CV <- sigma$sd_biomass/sigma$mean_biomass
+        colnames(sigma) <- c("species","sd")
+        sigma$mean <- aggregate(temp_plot$biomass, list(temp_plot$species), mean)$x
+        sigma$CV <- sigma$sd/sigma$mean
         sigma$site <- site
         sigma$order <- order
         sigma$simul <- number
@@ -158,7 +137,7 @@ sd_biomass_tot <- function(site){
         sigma <- sd(summed$x)
         mu <- mean(summed$x)
         CV <- sigma/mu
-        sigma <- data.frame(sd_biomass=sigma,mean_biomass=mu,CV,site,order,number)
+        sigma <- data.frame(sd=sigma,mean=mu,CV,site,order,number)
         
         SIGMA <- rbind(SIGMA,sigma)
       }
@@ -166,72 +145,101 @@ sd_biomass_tot <- function(site){
   }
   SIGMA
 }
+
+
 # Productivity - removal experiments ####
+productivity_specific <- function(site){
+  PROD <- NULL
+  for (order in ORDER){
+    for(number in c(1:30)){
+      prod <- try(read.table(paste0("data/raw/output-cmd2_",site,"_",order,".txt/forceps.",site,".site_",number,"_productivityScene.txt")),silent=T)
+      if (class(prod) != "try-error"){# sometimes, the files are empty, and it returns an error message
+        colnames(prod)<-colnames_prod
+        years_to_keep <- max(prod$date) - c(900,800,700,600,500,400,300,200,100,0)
+        prod_to_keep <- subset(prod,date %in% years_to_keep)
+        prod_to_keep$totProdBiomass_t_ha <- prod_to_keep$adultProdBiomass_t_ha + prod_to_keep$saplingBiomass_t_ha
+        
+        # specific productivities
+        productivities <- aggregate(prod_to_keep$totProdBiomass_t_ha, list(prod_to_keep$speciesShortName), mean)
+        colnames(productivities) <- c("species","productivity_t_ha")
+        productivities$site <- site
+        productivities$order <- order
+        productivities$simul <- number
+        PROD <- rbind(PROD,productivities)
+      }
+    }
+  }
+  PROD
+}
+
+productivity_total <- function(site){
+  # 1. Reads the data frame printed by productivity_specific
+  # 2. Sums the specific biomasses for each simul
+  # 3. Returns a data.frame (e.g. total_biomass_final_Bern.txt)whose colnames are:
+  # "site"	"simul"	"decreasing"	"increasing"	"random_1"	"random_10"	"random_2"	"random_3"	etc.
+  # which gives the biomasses (t/ha) for each simul in each order in a given site.
+  PROD_sp <- read.table(paste0("data/processed/productivity_specific_",site,".txt"),header=T)
+  PROD_tot <- aggregate(PROD_sp$productivity_t_ha,list(site = PROD_sp$site,order = PROD_sp$order,simul = PROD_sp$simul),FUN=sum)# sum of the productivities of the species
+  
+  prod_per_order <- spread(PROD_tot,order,x) # data frame with each order in column
+  prod_per_order
+}
 
 # sd(Productivity) - removal experiments ####
+sd_productivity_specific <- function(site){
+  SIGMA <- NULL
+  for (order in ORDER){
+    for(number in c(1:30)){
+      prod <- try(read.table(paste0("data/raw/output-cmd2_",site,"_",order,".txt/forceps.",site,".site_",number,"_productivityScene.txt")),silent=T)
+      if (class(prod) != "try-error"){# sometimes, the files are empty, and it returns an error message
+        colnames(prod)<-colnames_prod
+        prod$totProdBiomass_t_ha <- prod$adultProdBiomass_t_ha + prod$saplingBiomass_t_ha
 
-# Former Productivity - removal experiments ####
-removal_exp_productivity <- function(site){
-  colnames_prod <- read.table("data/colnames_productivityScene.txt",header=T)
-  
-  richness<-c(30:1)
-  
-  # Species removed with increasing functional distinctiveness
-  prod_inc<-c()
-  for(i in c(1:30)){
-    prod <- read.table(paste0("data/raw/output-cmd2_",site,"_increasing.txt/forceps.",site,".site_",i,"_productivityScene.txt"))
-    colnames(prod)<-colnames(colnames_prod)
-    # productivity averaged
-    years_to_keep <- max(prod$date) - c(900,800,700,600,500,400,300,200,100,0)
-    prod_to_keep <- subset(prod,date %in% years_to_keep)
-    # Annual productivity = sum of species specific annual productivities:
-    annual_prod <- c()
-    for(k in years_to_keep){
-      annual_prod <- c(annual_prod, sum(prod_to_keep[which(prod_to_keep$date==k),]$adultProdBiomass) + sum(prod_to_keep[which(prod_to_keep$date==k),]$saplingBiomass))
-    }
-    prod_inc<-c(prod_inc,mean(annual_prod))
-  }
-  
-  # Species removed with decreasing functional distinctiveness
-  prod_dec<-c()
-  for(i in c(1:30)){
-    prod <- read.table(paste0("data/raw/output-cmd2_",site,"_decreasing.txt/forceps.",site,".site_",i,"_productivityScene.txt"))
-    colnames(prod)<-colnames(colnames_prod)
-    # productivity averaged
-    years_to_keep <- max(prod$date) - c(900,800,700,600,500,400,300,200,100,0)
-    prod_to_keep <- subset(prod,date %in% years_to_keep)
-    # Annual productivity = sum of species specific annual productivities:
-    annual_prod <- c()
-    for(k in years_to_keep){
-      annual_prod <- c(annual_prod, sum(prod_to_keep[which(prod_to_keep$date==k),]$adultProdBiomass) + sum(prod_to_keep[which(prod_to_keep$date==k),]$saplingBiomass))
-    }
-    prod_dec<-c(prod_dec,mean(annual_prod))
-  }
-
-  
-  # Species removed in random order
-  nb_rand <- 10 # number of random simul
-  RAND <- data.frame(matrix(NA,nrow=30,ncol=nb_rand))
-  
-  for (j in c(1:nb_rand)){
-    prod_ran<-c()
-    for(i in c(1:30)){
-      prod <- read.table(paste0("data/raw/output-cmd2_",site,"_random_",j,".txt/forceps.",site,".site_",i,"_productivityScene.txt"))
-      colnames(prod)<-colnames(colnames_prod)
-      # productivity averaged
-      years_to_keep <- max(prod$date) - c(900,800,700,600,500,400,300,200,100,0)
-      prod_to_keep <- subset(prod,date %in% years_to_keep)
-      # Annual productivity = sum of species specific annual productivities:
-      annual_prod <- c()
-      for(k in years_to_keep){
-        annual_prod <- c(annual_prod, sum(prod_to_keep[which(prod_to_keep$date==k),]$adultProdBiomass)+ sum(prod_to_keep[which(prod_to_keep$date==k),]$saplingBiomass) )
+        sigma <- aggregate(prod$totProdBiomass_t_ha, list(prod$speciesShortName), sd)
+        colnames(sigma) <- c("species","sd")
+        sigma$mean <- aggregate(prod$totProdBiomass_t_ha, list(prod$speciesShortName), mean)$x
+        sigma$CV <- sigma$sd_productivity/sigma$mean_productivity
+        sigma$site <- site
+        sigma$order <- order
+        sigma$simul <- number
+        
+        SIGMA <- rbind(SIGMA,sigma)
       }
-      prod_ran<-c(prod_ran,mean(annual_prod))
     }
-    RAND[,j]<-prod_ran
   }
-  
-  # Confidence interval (NB: to improve!) and .txt export
+  SIGMA
+}
+
+sd_productivity_tot <- function(site){
+  SIGMA <- NULL
+  for (order in ORDER){
+    for(number in c(1:30)){
+      prod <- try(read.table(paste0("data/raw/output-cmd2_",site,"_",order,".txt/forceps.",site,".site_",number,"_productivityScene.txt")),silent=T)
+      if (class(prod) != "try-error"){# sometimes, the files are empty, and it returns an error message
+        colnames(prod)<-colnames_prod
+        prod$totProdBiomass_t_ha <- prod$adultProdBiomass_t_ha + prod$saplingBiomass_t_ha
+        
+        summed <- aggregate(prod$totProdBiomass_t_ha, list(prod$date), sum)
+        sigma <- sd(summed$x)
+        mu <- mean(summed$x)
+        CV <- sigma/mu
+        sigma <- data.frame(sd=sigma,mean=mu,CV,site,order,number)
+        
+        SIGMA <- rbind(SIGMA,sigma)
+      }
+    }
+  }
+  SIGMA
+}
+
+
+# Confidence interval ####
+confidence_interval <- function(site,measure){
+  # Computes the confidence interval on the table written by total_biomass_final
+  # measure is either "biomass" or "productivity"
+  data <- read.table(paste0("data/processed/",measure,"_",site,".txt"),header=T)
+  RAND <- select(data,ORDER[3:12])# select only the random results
+
   int_min <- c()
   int_max <- c()
   mean <- c()
@@ -240,13 +248,9 @@ removal_exp_productivity <- function(site){
     int_max <- c(int_max, mean(as.numeric(RAND[j,])) - 1.96 * sd(as.numeric(RAND[j,]))/sqrt(10) )
     mean <- c(mean, mean(as.numeric(RAND[j,])) )
   }
-  RAND$int_min <- int_min
-  RAND$int_max <- int_max
-  RAND$mean <- mean
-  RAND$prod_dec <- prod_dec
-  RAND$prod_inc <- prod_inc
-  RAND$nb_removed <- c(0:29)
-
-  write.table(RAND,paste0("data/processed/Productivity_species removal experiments_",site,".txt"),sep="\t")
+  data$int_min <- int_min
+  data$int_max <- int_max
+  data$mean <- mean
+  
+  data
 }
-
