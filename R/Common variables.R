@@ -19,5 +19,5 @@ timestep <- 100
 SITE <- c("Bern","Bever","Cottbus","Huttwil")
 ORDER <- c("increasing","decreasing","random_1","random_2","random_3","random_4",
            "random_5","random_6","random_7","random_8","random_9","random_10")
-MEASURE <- c("biomass_tot","sd_biomass","CV_biomass",
-             "productivity_tot","sd_productivity","CV_productivity")
+MEASURE <- c("biomass_tot","sd_biomass_tot","CV_biomass_tot",
+             "productivity_tot","sd_productivity_tot","CV_productivity_tot")

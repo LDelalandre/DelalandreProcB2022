@@ -84,7 +84,7 @@ biomass_specific <- function(site) {
   BIOMASSES
 }  
 
-biomas_tot <- function(site){
+biomass_tot <- function(site){
   # 1. Reads the data frame printed by specific_biomass_final
   # 2. Sums the specific biomasses for each simul
   # 3. Returns a data.frame (e.g. total_biomass_final_Bern.txt)whose colnames are:
@@ -123,7 +123,7 @@ sd_biomass_specific <- function(site){
   SIGMA
 }
 
-sd_biomass_tot <- function(site){
+sd_biomass_tot <- function(site){ # Takes a looong time
   SIGMA <- NULL
   for (order in ORDER){
     for(number in c(1:30)){
@@ -137,7 +137,7 @@ sd_biomass_tot <- function(site){
         sigma <- sd(summed$x)
         mu <- mean(summed$x)
         CV <- sigma/mu
-        sigma <- data.frame(sd=sigma,mean=mu,CV,site,order,number)
+        sigma <- data.frame(sd=sigma,mean=mu,CV,site,order,simul=number)
         
         SIGMA <- rbind(SIGMA,sigma)
       }
@@ -198,7 +198,7 @@ sd_productivity_specific <- function(site){
         sigma <- aggregate(prod$totProdBiomass_t_ha, list(prod$speciesShortName), sd)
         colnames(sigma) <- c("species","sd")
         sigma$mean <- aggregate(prod$totProdBiomass_t_ha, list(prod$speciesShortName), mean)$x
-        sigma$CV <- sigma$sd_productivity/sigma$mean_productivity
+        sigma$CV <- sigma$sd/sigma$mean
         sigma$site <- site
         sigma$order <- order
         sigma$simul <- number
@@ -223,7 +223,7 @@ sd_productivity_tot <- function(site){
         sigma <- sd(summed$x)
         mu <- mean(summed$x)
         CV <- sigma/mu
-        sigma <- data.frame(sd=sigma,mean=mu,CV,site,order,number)
+        sigma <- data.frame(sd=sigma,mean=mu,CV,site,order,simul=number)
         
         SIGMA <- rbind(SIGMA,sigma)
       }
