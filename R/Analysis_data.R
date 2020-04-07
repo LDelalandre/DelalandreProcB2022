@@ -161,10 +161,11 @@ productivity_specific <- function(site){
         
         # specific productivities
         productivities <- aggregate(prod_to_keep$totProdBiomass_t_ha, list(prod_to_keep$speciesShortName), mean)
-        colnames(productivities) <- c("species","productivity_t_ha")
+        colnames(productivities) <- c("species","mixture_t_ha")
         productivities$site <- site
         productivities$order <- order
         productivities$simul <- number
+        productivities$mixture_relative <- productivities$mixture_t_ha/sum(productivities$mixture_t_ha)
         PROD <- rbind(PROD,productivities)
       }
     }
@@ -179,7 +180,7 @@ productivity_total <- function(site){
   # "site"	"simul"	"decreasing"	"increasing"	"random_1"	"random_10"	"random_2"	"random_3"	etc.
   # which gives the biomasses (t/ha) for each simul in each order in a given site.
   PROD_sp <- read.table(paste0("data/processed/productivity_specific_",site,".txt"),header=T)
-  PROD_tot <- aggregate(PROD_sp$productivity_t_ha,list(site = PROD_sp$site,order = PROD_sp$order,simul = PROD_sp$simul),FUN=sum)# sum of the productivities of the species
+  PROD_tot <- aggregate(PROD_sp$mixture_t_ha,list(site = PROD_sp$site,order = PROD_sp$order,simul = PROD_sp$simul),FUN=sum)# sum of the productivities of the species
   
   prod_per_order <- spread(PROD_tot,order,x) # data frame with each order in column
   prod_per_order
@@ -244,9 +245,9 @@ confidence_interval <- function(site,measure){
   int_max <- c()
   mean <- c()
   for (j in c(1:30)){
-    int_min <- c(int_min, mean(as.numeric(RAND[j,])) + 1.96 * sd(as.numeric(RAND[j,]))/sqrt(10) )
-    int_max <- c(int_max, mean(as.numeric(RAND[j,])) - 1.96 * sd(as.numeric(RAND[j,]))/sqrt(10) )
-    mean <- c(mean, mean(as.numeric(RAND[j,])) )
+    int_min <- c(int_min, mean(as.numeric(RAND[j,]),na.rm=TRUE) + 1.96 * sd(as.numeric(RAND[j,]),na.rm=TRUE)/sqrt(10) )
+    int_max <- c(int_max, mean(as.numeric(RAND[j,]),na.rm=TRUE) - 1.96 * sd(as.numeric(RAND[j,]),na.rm=TRUE)/sqrt(10) )
+    mean <- c(mean, mean(as.numeric(RAND[j,]),na.rm=TRUE) )
   }
   data$int_min <- int_min
   data$int_max <- int_max

@@ -4,30 +4,70 @@ source("R/Monocultures_functions.R")
 source("R/Common variables.R")
 
 
-site <- SITE[1]
-order <- ORDER[2]
-number <- 1 # number of the simulation. 1: All the species are present. 30: Just one species is left.
+# site <- SITE[1]
+# order <- ORDER[2]
+# number <- 1 # number of the simulation. 1: All the species are present. 30: Just one species is left.
 
 # Specific values of biomass and sd(biomass) for the monocultures ####
-specific_val <- specific_values(site)
-biomass <- biomasses(site = "Bever",specific_val = specific_val)
-write.table(biomass,paste0("data/processed/specific_biomass_final_",site,"_with monocultures.txt"),row.names=F,sep="\t")
+for (site in SITE){
+  specific_val <- specific_biomasses(site)
+  write.table(specific_val,paste0("data/processed/biomass_monoculture_",site,".txt"),row.names=F,sep="\t")
+  biomass <- biomasses(site = site,specific_val = specific_val)
+  write.table(biomass,paste0("data/processed/biomass_specific_",site,"_with monocultures.txt"),row.names=F,sep="\t")
+}
+
+# Specific productivity ####
+for (site in SITE){
+  specific_val <- specific_productivities(site)
+  write.table(specific_val,paste0("data/processed/productivity_monoculture_",site,".txt"),row.names=F,sep="\t")
+  prod <- productivities(site = site,specific_val = specific_val)
+  write.table(prod,paste0("data/processed/productivity_specific_",site,"_with monocultures.txt"),row.names=F,sep="\t")
+}
+
 
 # Superposition of mixture and monoculture ####
-# NB CHANGE IT FOR READ.TABLES
-removal_comparison <- data.frame(matrix(data=c(0:29),ncol=3,nrow=30,dimnames=list(c(1:30),c("Nb_sp_removed","Monoculture_biomass","Mixture_biomass"))))
-for (number in c(1:30)){
-  biomass_comp <- biomasses(site=site,specific_val=specific_val,number=number,order=order)
-  removal_comparison[number,2] <- sum(biomass_comp$`monoculture(t/ha)`)/dim(biomass_comp)[1]
-  removal_comparison[number,3] <- sum(biomass_comp$`mixture(t/ha)`)
+for (site in SITE){
+  for (order in ORDER){
+    removal_comparison <- data.frame(matrix(data=c(0:29),ncol=3,nrow=30,dimnames=list(c(1:30),c("Nb_sp_removed","Monoculture_biomass","Mixture_biomass"))))
+    tot <- read.table(paste0("data/processed/biomass_specific_",site,"_with monocultures.txt"),header=T)
+    for (number in c(1:30)){
+      ord <- order
+      biomass_comp <- subset(tot,order==ord & simul==number)
+      removal_comparison[number,2] <- sum(biomass_comp$monoculture.t.ha)/dim(biomass_comp)[1]
+      removal_comparison[number,3] <- sum(biomass_comp$mixture.t.ha)
+    }
+    
+    plot = ggplot(removal_comparison,aes(x = Nb_sp_removed))+
+      geom_line(aes(y = Monoculture_biomass, colour = "Monoculture")) + 
+      geom_line(aes(y = Mixture_biomass, colour = "Mixture"))+
+      labs(x="Number of species removed",y="Biomass")+
+      ggtitle(paste0(site,"_",order))
+    ggsave(filename = paste0("figures/Monocultures_",site,"/removal_mixt_mono_",site,"_",order,".png"),
+           plot=plot)
+  }
 }
-plot = ggplot(removal_comparison,aes(x = Nb_sp_removed))+
-  geom_line(aes(y = Monoculture_biomass, colour = "Monoculture")) + 
-  geom_line(aes(y = Mixture_biomass, colour = "Mixture"))+
-  labs(x="Number of species removed",y="Biomass")+
-  ggtitle(paste0(site,"_",order))
-ggsave(filename = paste0("figures/removal_mixt_mono_",site,"_",order,".png"),
-       plot=plot)
+
+# Productivity
+for (site in SITE){
+  for (order in ORDER){
+    removal_comparison <- data.frame(matrix(data=c(0:29),ncol=3,nrow=30,dimnames=list(c(1:30),c("Nb_sp_removed","Monoculture_biomass","Mixture_biomass"))))
+    tot <- read.table(paste0("data/processed/productivity_specific_",site,"_with monocultures.txt"),header=T)
+    for (number in c(1:30)){
+      ord <- order
+      biomass_comp <- subset(tot,order==ord & simul==number)
+      removal_comparison[number,2] <- sum(biomass_comp$monoculture)/dim(biomass_comp)[1]
+      removal_comparison[number,3] <- sum(biomass_comp$mixture_t_ha)
+    }
+    
+    plot = ggplot(removal_comparison,aes(x = Nb_sp_removed))+
+      geom_line(aes(y = Monoculture_biomass, colour = "Monoculture")) + 
+      geom_line(aes(y = Mixture_biomass, colour = "Mixture"))+
+      labs(x="Number of species removed",y="Productivity")+
+      ggtitle(paste0(site,"_",order))
+    ggsave(filename = paste0("figures/Monocultures_",site,"/Productivity/prod_removal_mixt_mono_",site,"_",order,".png"),
+           plot=plot)
+  }
+}
 
 
 # Species removal ####
