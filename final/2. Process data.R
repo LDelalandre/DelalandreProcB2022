@@ -81,3 +81,5 @@ for (site in SITE){ # Add confidence intervals...
     write.table(conf,paste0("data/processed/",measure,"_",site,"_with interval.txt"),sep="\t",row.names=F)
   }
 }
+
+
