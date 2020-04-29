@@ -70,7 +70,7 @@ Cmd_decr<-function(distinct_tot,length,yearstobejumped,timestep,site){ # distinc
   cat("# Forceps script command file, format SimulationCommandReader2 (Xavier Morin)")
   cat("\n")
   cat("\n")
-  cat(paste0("setupFileName = forceps.setup_",site))
+  cat(paste0("setupFileName = forceps.setup"))
   cat("\n")
   cat(paste0("numberOfYearsToBeJumped = ",yearstobejumped))
   cat("\n")
@@ -95,7 +95,7 @@ Cmd_incr<-function(distinct_tot,length,yearstobejumped,timestep,site){
   cat("# Forceps script command file, format SimulationCommandReader2 (Xavier Morin)")
   cat("\n")
   cat("\n")
-  cat(paste0("setupFileName = forceps.setup_",site))
+  cat(paste0("setupFileName = forceps.setup"))
   cat("\n")
   cat(paste0("numberOfYearsToBeJumped = ",yearstobejumped))
   cat("\n")
@@ -114,7 +114,7 @@ Cmd_incr<-function(distinct_tot,length,yearstobejumped,timestep,site){
 Cmd_rand<-function(distinct_tot,length,yearstobejumped,timestep,site){
   # Write Cmd files with species removed in random order
   # NB: here, we generate 300 dynamics (10 random removals of 30 species)
-  for (j in 1:10){
+  for (j in 1:30){
     set.seed(j)
     ord_random<-sample(c(0:29))
     
@@ -122,7 +122,7 @@ Cmd_rand<-function(distinct_tot,length,yearstobejumped,timestep,site){
     cat("# Forceps script command file, format SimulationCommandReader2 (Xavier Morin)")
     cat("\n")
     cat("\n")
-    cat(paste0("setupFileName = forceps.setup_",site))
+    cat(paste0("setupFileName = forceps.setup"))
     cat("\n")
     cat(paste0("numberOfYearsToBeJumped = ",yearstobejumped))
     cat("\n")
@@ -145,7 +145,7 @@ Cmd_mono<-function(distinct_tot,length,yearstobejumped,timestep,site){
   cat("# Forceps script command file, format SimulationCommandReader2 (Xavier Morin)")
   cat("\n")
   cat("\n")
-  cat(paste0("setupFileName = forceps.setup_",site))
+  cat(paste0("setupFileName = forceps.setup"))
   cat("\n")
   cat(paste0("numberOfYearsToBeJumped = ",yearstobejumped))
   cat("\n")

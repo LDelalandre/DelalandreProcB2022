@@ -1,33 +1,14 @@
 library(gridExtra)
-source("R/Analysis_data.R")
-source("R/Monocultures_functions.R")
 source("R/Common variables.R")
-
+source("R/Monocultures_functions.R")
 
 # site <- SITE[1]
 # order <- ORDER[2]
 # number <- 1 # number of the simulation. 1: All the species are present. 30: Just one species is left.
 
-# Specific values of biomass and sd(biomass) for the monocultures ####
-for (site in SITE){
-  specific_val <- specific_biomasses(site)
-  write.table(specific_val,paste0("data/processed/biomass_monoculture_",site,".txt"),row.names=F,sep="\t")
-  biomass <- biomasses(site = site,specific_val = specific_val)
-  write.table(biomass,paste0("data/processed/biomass_specific_",site,"_with monocultures.txt"),row.names=F,sep="\t")
-}
-
-# Specific productivity ####
-for (site in SITE){
-  specific_val <- specific_productivities(site)
-  write.table(specific_val,paste0("data/processed/productivity_monoculture_",site,".txt"),row.names=F,sep="\t")
-  prod <- productivities(site = site,specific_val = specific_val)
-  write.table(prod,paste0("data/processed/productivity_specific_",site,"_with monocultures.txt"),row.names=F,sep="\t")
-}
-
-
 # Superposition of mixture and monoculture ####
 for (site in SITE){
-  for (order in ORDER){
+  for (order in ORDER[1:2]){
     removal_comparison <- data.frame(matrix(data=c(0:29),ncol=3,nrow=30,dimnames=list(c(1:30),c("Nb_sp_removed","Monoculture_biomass","Mixture_biomass"))))
     tot <- read.table(paste0("data/processed/biomass_specific_",site,"_with monocultures.txt"),header=T)
     for (number in c(1:30)){
@@ -136,31 +117,4 @@ ggplot(specific_val,aes(x=Di,y=biomass_monoculture,label=SName))+
   geom_point() +
   geom_label()
 
-
-
-# Search for and explanation to the shape of the curves ####
-x=c(1:30)
-
-y1=4500-150*x # linear decrease
-plot(x,y1)
-
-y2=4500-5*x^2 # concave-down decrease
-plot(x,y2)
-
-y3=4500-821.5*x^0.5 # Concave_up decrease (fait tq à x=0, on ait y=0, soit 4500/(30^0.5) = coef directeur)
-plot(x,y3)
-
-z1=rep(0,30)
-z2 <- z1
-z3 <- z1
-for (i in 1:30){
-  z1[i]=y1[i]/length(i:30)
-  z2[i]=y2[i]/length(i:30)
-  z3[i]=y3[i]/length(i:30)
-}
-
-plot(x,y1) ; points(x,y2) ; points(x,y3)
-plot(x,z1) 
-plot(x,z2) 
-plot(x,z3)
 

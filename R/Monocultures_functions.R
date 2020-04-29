@@ -7,9 +7,10 @@ specific_biomasses <- function(site){
   # Rq: be careful of the way the folders and files are named.
   # NB: add productivity and sd(productivity) to it when I have the adequate simulations!
   biomass<-c()
-  sd_biom<-c()
+  abundance <- c()
+  # sd_biom<-c()
   mean_biom <- c()
-  CV_biom <- c()
+  # CV_biom <- c()
   for(i in c(1:30)){
     mean <- read.table(paste0("data/raw/output-cmd2_",site,"_monoculture.txt/forceps.",site,".site_",i,"_mean.txt"))
     # NB it is in the good order because we made the monocultures in the order of the species Id number.
@@ -18,22 +19,70 @@ specific_biomasses <- function(site){
     years_to_keep <- max(mean$date) - c(900,800,700,600,500,400,300,200,100,0)
     meanbiom <- mean(subset(mean,date %in% years_to_keep)$totalBiomass.t.ha.)
     biomass<-c(biomass,meanbiom) # average of the last years
-    sd_biom<-c(sd_biom,sd(mean$totalBiomass.t.ha.,na.rm=T)) 
-    mean_biom <- c(mean_biom,mean(mean$totalBiomass.t.ha.,na.rm=T)) # average on the temporal series
+    meanab <- mean(subset(mean,date %in% years_to_keep)$nTrees..ha.)*Nbpatches*0.08
+    abundance <- c(abundance,meanab)
+    # sd_biom<-c(sd_biom,sd(mean$totalBiomass.t.ha.,na.rm=T)) 
+    # mean_biom <- c(mean_biom,mean(mean$totalBiomass.t.ha.,na.rm=T)) # average on the temporal series
     # NB : I don't compute sd(biomass) on the same years as I did for the mixtures!
   }
   
   # specific_values: a data frame with final biomass of each monoculture, etc. 
   specific_values <- read.table("data/raw/distinctiveness of the species.txt",header=T)
   specific_values$'monoculture(t/ha)' <- biomass
-  specific_values$sd_biom <- sd_biom
+  specific_values$abundance <- abundance
+  # specific_values$sd_biom <- sd_biom
   specific_values$mean_biom <- mean_biom
-  specific_values$CV_biom <- sd_biom/ mean_biom
+  # specific_values$CV_biom <- sd_biom/ mean_biom
   specific_values$Id <- c(0:29)
   specific_values$monoculture_relative <- specific_values$'monoculture(t/ha)' / sum(specific_values$'monoculture(t/ha)')
   specific_values
 }
 
+add_zeros <- function(site,biomasses,measure){
+  sit <- site
+  # This function adds lines with species present at the beginning of a simulation but
+  # whose biomass is null a the end to the output of specific_biomasses.
+  # Useful for the Loreau-Hector analysis.
+  data <- biomasses
+  data$species <- as.character(data$species)
+  data$site <- as.character(data$site)
+  data$order <- as.character(data$order)
+  # Include species whose biomass or productivity = 0
+  # First, have a data frame with the Id of species in all the oders of removal
+  distinct_tot <- read.table("data/raw/distinctiveness of the species.txt",header=T)
+  distinct_tot$Id <- c(0:29)
+  SPord <- data.frame(matrix(data = NA, nrow = 30, ncol = 0))
+  SPord$incr <-distinct_tot[order(distinct_tot$Di,decreasing=FALSE),]$Id
+  SPord$decr <-distinct_tot[order(distinct_tot$Di,decreasing=TRUE),]$Id
+  for (j in 1:30){
+    set.seed(j)
+    SPord[j+2] <- sample(c(0:29))
+  }
+  colnames(SPord) <- ORDER
+  
+  # Second, have the correspondence between species Id and species short name
+  name_sname <- read.table("data/Traits of the species_complete.txt",header=T)
+  name_sname <- name_sname[,c(1,2)]
+  name_sname[,1] <- c(0:29) 
+  colnames(name_sname) <- c("Id","SName")
+  name_sname$SName <- as.character(name_sname$SName)
+  
+  # Third, add lines in the file data with 
+  for (sim in c(1:30)){# all the simul
+    for (ord in ORDER){
+      spId <- SPord[,which(colnames(SPord) == ord)] # list of sp Id ordered for a given order of removal
+      pr_in <- spId[sim:length(spId)] # list of the Id of species that were present at the beginning of that simulation
+      zeros <- name_sname$SName[which(name_sname$Id %in% pr_in)] # Short names of the same species
+      sub <- subset(data,order==ord&simul==sim & site==sit)
+      to_add <- zeros[which(!(zeros %in% sub$species))] # species that were present at the beginning of the simul, but not at the end.
+      for(sp in to_add){
+        data <- rbind(data,c(sp,0,0,0,sit,ord,sim))
+      }
+    }
+    
+  }
+  data
+}
 
 biomasses <- function(site,specific_val){
   # returns a data frame with colnames:
@@ -43,17 +92,21 @@ biomasses <- function(site,specific_val){
   
   # Example for the variables: site="Bern" ; specific_val = specific_values(site) ; number=1 ; order="decreasing" ; Nbpatches = 10 (ou 50)
   # Number is the number of the simulation (1: we didn't remove any species, until 30: there is only one species left)
-  biomasses <- read.table(paste0("data/processed/biomass_specific_",site,".txt"),header=T)
+  biomasss <- read.table(paste0("data/processed/biomass_specific_",site,".txt"),header=T)
   
+  biomasses <- add_zeros(site=site,biomasses=biomasss,measure="biomass_tot")
   # Add a column with absolute biomass of the same species in monoculture
   biom_mono <- c()
   dist <- c()
+  ab <- c()
   for (i in 1:dim(biomasses)[1]){
     biom_mono <- c(biom_mono,specific_val[which(specific_val$SName == as.character(biomasses[i,]$species) ),]$'monoculture(t/ha)')
     dist <- c(dist,specific_val[which(specific_val$SName == as.character(biomasses[i,]$species) ),]$Di)
+    ab <- c(ab,specific_val[which(specific_val$SName == as.character(biomasses[i,]$species) ),]$abundance)
   }
   biomasses$`monoculture(t/ha)` <- biom_mono
   biomasses$dist <- dist
+  biomasses$mono_abundance <- ab
   
   # Add a column with relative biomass of the same species in a mix of monocultures with the same species
   mono_sum <- aggregate(biomasses$`monoculture(t/ha)`, list(order=biomasses$order,simul=biomasses$simul), sum) # mean per species
@@ -114,8 +167,8 @@ productivities <- function(site,specific_val){
   
   # Example for the variables: site="Bern" ; specific_val = specific_values(site) ; number=1 ; order="decreasing" ; Nbpatches = 10 (ou 50)
   # Number is the number of the simulation (1: we didn't remove any species, until 30: there is only one species left)
-  productivity <- read.table(paste0("data/processed/productivity_specific_",site,".txt"),header=T)
-  
+  productivityy <- read.table(paste0("data/processed/productivity_specific_",site,".txt"),header=T)
+  productivity <- add_zeros(site=site,biomasses=productivityy,measure="productivity_tot")
   # Add a column with absolute biomass of the same species in monoculture
   biom_mono <- c()
   dist <- c()

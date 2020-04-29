@@ -66,6 +66,7 @@ write.table(TOTAL,"data/processed/specific_biom_prod_complete.txt",row.names=F)
 # biomass_per_order <- spread(BIOMASSES_tot,order,x) # data frame with each order in column
 
 # Data frames to plot species removal experiments ####
+TOTAL <- read.table("data/processed/specific_biom_prod_complete.txt",header=T)
 for (sit in SITE){ 
   BIOMASSES_sp <- subset(TOTAL,site==sit)
   for (measure in MEASURE){

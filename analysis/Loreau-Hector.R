@@ -1,38 +1,126 @@
-#en faire une fonction
+source("R/Common variables.R")
+
+
+# write.table(data,paste0("data/processed/specific_",measure,"_with_zeros.txt"),row.names=F)
+# now we have all the data, with zero 
+# évidemment, c'est méééééga long, vu que c'est codé avec les pieds...
+
+####
+# NB: ajouter une option: relatif/absolu
 data <- read.table("data/processed/specific_biom_prod_complete.txt",header=T)
-if (measure=="biomass_tot"){
-  data <- select(data,species, mixture.t.ha.,monoculture.t.ha.,site, order, simul)
-  names(data)[names(data) == "mixture.t.ha."] <- "YOi"
-  names(data)[names(data) == "monoculture.t.ha."] <- "Mi"
-}else{
-  data <- select(data,species, prod_mixture,prod_monoculture,site, order, simul)
-  names(data)[names(data) == "prod_mixture"] <- "YOi"
-  names(data)[names(data) == "prod_monoculture"] <- "Mi"
+measure <- "biomass_tot"
+relatif=F
+
+LH <- function(measure,relatif){
+  # relatif=T or F
+  if (measure=="biomass_tot"){
+    data <- select(data,species, mixture.t.ha.,monoculture.t.ha.,site, order, simul)
+    names(data)[names(data) == "mixture.t.ha."] <- "YOi"
+    names(data)[names(data) == "monoculture.t.ha."] <- "Mi"
+  }else{
+    data <- select(data,species, prod_mixture,prod_monoculture,site, order, simul)
+    names(data)[names(data) == "prod_mixture"] <- "YOi"
+    names(data)[names(data) == "prod_monoculture"] <- "Mi"
+  }
+  
+  # dat <- read.table("data/processed/specific_biom_prod_with_zeros.txt",header=T)
+  data$un <- rep(1,dim(data)[1])
+  data <- data %>% group_by(site,order,simul)
+  
+  
+  # data2 <- data %>%
+  #   mutate(YO=sum(YOi)) %>%
+  #   mutate(RYEi=1/(31-simul)) %>%# 1/N, N being the initial nb of species. For simul 30, N=31-30=1 sp. For simul 1, N=31-1=30 sp, etc.
+  #   mutate(RYOi=YOi/Mi) %>%
+  #   mutate(YEi=RYEi*Mi) %>%
+  #   mutate(YE=sum(YEi)) %>%
+  #   mutate(DeltaY=YO-YE) %>%
+  #   mutate(DeltaRYi=RYOi-RYEi) %>%
+  #   mutate(Mavg = mean(Mi)) %>%
+  #   mutate(DeltaRYavg = mean(DeltaRYi)) %>%
+  #   
+  #   mutate(Cpltarity = (31-simul)*DeltaRYavg*Mavg) %>%
+  #   mutate(Selection = DeltaY - Cpltarity)%>%
+  #   
+  #   mutate(Selection2=(31-simul)*(DeltaRYavg-DeltaRYi)*(Mavg-Mi))
+  
+  data2 <- data%>%
+    subset(Mi!=0) %>%
+    mutate(nb_sp=sum(un)) %>%
+    mutate(YO=sum(YOi)) %>%
+    mutate(RYEi=1/nb_sp) %>%# 1/N, N being the initial nb of species. For simul 30, N=31-30=1 sp. For simul 1, N=31-1=30 sp, etc.
+    mutate(RYOi=YOi/Mi) %>%
+    mutate(YEi=RYEi*Mi) %>%
+    mutate(YE=sum(YEi)) %>%
+    mutate(DeltaY=YO-YE) %>%
+    mutate(DeltaRYi=RYOi-RYEi) %>%
+    mutate(Mavg = mean(Mi)) %>%
+    mutate(DeltaRYavg = mean(DeltaRYi)) %>%
+    
+    mutate(Cpltarity = nb_sp*DeltaRYavg*Mavg) %>%
+    mutate(Selection = DeltaY - Cpltarity)%>%
+    
+    mutate(Selection2=nb_sp*(DeltaRYavg-DeltaRYi)*(Mavg-Mi))
+  data2
 }
-data <- data %>% group_by(site,order,simul)
 
-data2 <- data %>% 
-  mutate(YO=mean(YOi)) %>%
-  mutate(RYEi=1/(31-simul)) %>%# 1/N, N being the initial nb of species. For simul 30, N=31-30=1 sp. For simul 1, N=31-1=30 sp, etc.
-  mutate(RYOi=YOi/Mi) %>%
-  mutate(YEi=RYEi*Mi) %>%
-  mutate(YE=sum(YEi)) %>%
-  mutate(DeltaY=YO-YE) %>%
-  mutate(DeltaRYi=RYOi-RYEi) %>%
-  mutate(Mavg = mean(Mi)) %>%
-  mutate(DeltaRYavg = mean(DeltaRYi)) %>%
-  
-  mutate(Cpltarity = (31-simul)*DeltaRYavg*Mavg) %>%
-  mutate(Selection = DeltaY - Cpltarity)
-  
+for (measure in MEASURE){
+  data2 <- LH(measure,relatif)
+  data3 <- summarise(data2,DeltaY=mean(DeltaY),Cpltarity=mean(Cpltarity),Selection=mean(Selection),Selection2=mean(Selection2))
+  write.table(data3,paste0("data/processed/Loreau-Hector_",measure,"_relatif=",relatif,".txt"),row.names = F,sep="\t")
+  # I use mean, because all the values are already the same for one group for DeltaRY etc.
+}
 
-data3 <- summarise(data2,DeltaY=mean(DeltaY),Cpltarity=mean(Cpltarity),Selection=mean(Selection)) 
-# I use mean, because all the values are already the same for one group for DeltaRY etc.
 
-sit <- SITE[1]
-orde <- ORDER[1]
-simu <- 1
+# sit <- "Bever"
+# orde <- ORDER[1]
+# simu <- 1
+for (measure in MEASURE){
+  data3 <- read.table(paste0("data/processed/Loreau-Hector_",measure,"_relatif=",relatif,".txt"),header=T)
+  for (sit in SITE){
+    for (orde in ORDER[1:2]){
+      within_site <- subset(data3,site==sit & order == orde)
+      plot(toplot$simul,toplot$Selection,type="l")
+      lines(toplot$simul,toplot$Cpltarity,type="l",col="2")#,ylim=c(-10000,300))
+      
+      p <- ggplot(within_site,aes(x=simul-1,y=Selection,color="Selection")) +
+        labs(x="Number of species removed",y=paste("LH coefficients",measure,"relatif=",relatif)) +
+        geom_line()+
+        # geom_ribbon(aes(ymin=int_min, ymax=int_max),fill="grey60", alpha=0.5,colour="black") +
+        geom_line(aes(x=simul-1,y=Cpltarity, color="Complementarity")) +
+        theme(legend.position = "bottom")
+      # scale_x_continuous(breaks = 2*c(1:15)) +
+      
+      if (orde=="decreasing"){
+        p=p+ggtitle(paste(sit,"Removing distinct species first"))
+      } else if (orde=="increasing") {
+        p=p+ggtitle(paste(sit,"Removing distinct species last"))
+      }
+      p + ggsave(paste0("figures/Loreau-Hector/within_site_",measure,"_relatif=",relatif,"_",sit,"_",orde,".png"))
+    }
+  }
+}
 
-toplot <- subset(data3,site==sit & order == orde)
-plot(toplot$simul,toplot$Cpltarity,type="l")#,ylim=c(-10000,300))
-# abline(toplot$simul,toplot$Selection)
+for (measure in MEASURE){
+  for (Sorted_by in c("Temperature","Precipitation")){
+    data3 <- read.table(paste0("data/processed/Loreau-Hector_",measure,"_relatif=",relatif,".txt"),header=T)
+    across_sites <- subset(data3,order=="increasing" & simul==1) # the first simul is the same whether the order is increasing or decreasing
+    if (Sorted_by == "Temperature"){
+      ord <- Site_descr[order(Site_descr$Temp_moy),]$Site # Sites ordered with increasing mean temperature
+    } else {
+      ord <- Site_descr[order(Site_descr$Annual_ppt),]$Site # Sites ordered with increasing mean temperature
+    }
+    across_sites$site <- factor(across_sites$site,levels = ord )
+    
+    p2 <- ggplot(across_sites,aes(x=site,y=Selection,color="Selection")) +
+      labs(x=paste("Site sorted by",Sorted_by),y=paste("LH coefficients",measure,"relatif=",relatif)) +
+      geom_boxplot()+
+      # geom_ribbon(aes(ymin=int_min, ymax=int_max),fill="grey60", alpha=0.5,colour="black") +
+      geom_boxplot(aes(x=site,y=Cpltarity, color="Complementarity")) +
+      theme(legend.position = "bottom") +
+      theme(axis.text.x = element_text(angle = 45, hjust = 1))
+    p2 + ggsave(paste0("figures/Loreau-Hector/across_sites_",measure,"_relatif=",relatif,"_sorted by_",Sorted_by,".png"))
+  }
+}
+
+
