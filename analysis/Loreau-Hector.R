@@ -14,13 +14,25 @@ relatif=F
 LH <- function(measure,relatif){
   # relatif=T or F
   if (measure=="biomass_tot"){
-    data <- select(data,species, mixture.t.ha.,monoculture.t.ha.,site, order, simul)
-    names(data)[names(data) == "mixture.t.ha."] <- "YOi"
-    names(data)[names(data) == "monoculture.t.ha."] <- "Mi"
+    if (relatif == F){
+      data <- select(data,species, mixture.t.ha.,monoculture.t.ha.,site, order, simul)
+      names(data)[names(data) == "mixture.t.ha."] <- "YOi"
+      names(data)[names(data) == "monoculture.t.ha."] <- "Mi"
+    } else{
+      data <- select(data,species, mixture_relative,monoculture_relative,site, order, simul)
+      names(data)[names(data) == "mixture_relative"] <- "YOi"
+      names(data)[names(data) == "monoculture_relative"] <- "Mi"
+    }
+
   }else{
-    data <- select(data,species, prod_mixture,prod_monoculture,site, order, simul)
-    names(data)[names(data) == "prod_mixture"] <- "YOi"
-    names(data)[names(data) == "prod_monoculture"] <- "Mi"
+    if (relatif == F){
+      data <- select(data,species, prod_mixture,prod_monoculture,site, order, simul)
+      names(data)[names(data) == "prod_mixture"] <- "YOi"
+      names(data)[names(data) == "prod_monoculture"] <- "Mi"
+    }
+    data <- select(data,species, prod_mixture_relative,prod_monoculture_relative,site, order, simul)
+    names(data)[names(data) == "prod_mixture_relative"] <- "YOi"
+    names(data)[names(data) == "prod_monoculture_relative"] <- "Mi"
   }
   
   # dat <- read.table("data/processed/specific_biom_prod_with_zeros.txt",header=T)
@@ -64,63 +76,75 @@ LH <- function(measure,relatif){
   data2
 }
 
-for (measure in MEASURE){
-  data2 <- LH(measure,relatif)
-  data3 <- summarise(data2,DeltaY=mean(DeltaY),Cpltarity=mean(Cpltarity),Selection=mean(Selection),Selection2=mean(Selection2))
-  write.table(data3,paste0("data/processed/Loreau-Hector_",measure,"_relatif=",relatif,".txt"),row.names = F,sep="\t")
-  # I use mean, because all the values are already the same for one group for DeltaRY etc.
+for (relatif in c(T,F)){
+  for (measure in MEASURE){
+    data2 <- LH(measure,relatif)
+    data3 <- summarise(data2,DeltaY=mean(DeltaY),Cpltarity=mean(Cpltarity),Selection=mean(Selection),Selection2=mean(Selection2))
+    write.table(data3,paste0("data/processed/Loreau-Hector_",measure,"_relatif=",relatif,".txt"),row.names = F,sep="\t")
+    # I use mean, because all the values are already the same for one group for DeltaRY etc.
+  }
 }
 
 
 # sit <- "Bever"
 # orde <- ORDER[1]
 # simu <- 1
-for (measure in MEASURE){
-  data3 <- read.table(paste0("data/processed/Loreau-Hector_",measure,"_relatif=",relatif,".txt"),header=T)
-  for (sit in SITE){
-    for (orde in ORDER[1:2]){
-      within_site <- subset(data3,site==sit & order == orde)
-      plot(toplot$simul,toplot$Selection,type="l")
-      lines(toplot$simul,toplot$Cpltarity,type="l",col="2")#,ylim=c(-10000,300))
-      
-      p <- ggplot(within_site,aes(x=simul-1,y=Selection,color="Selection")) +
-        labs(x="Number of species removed",y=paste("LH coefficients",measure,"relatif=",relatif)) +
-        geom_line()+
-        # geom_ribbon(aes(ymin=int_min, ymax=int_max),fill="grey60", alpha=0.5,colour="black") +
-        geom_line(aes(x=simul-1,y=Cpltarity, color="Complementarity")) +
-        theme(legend.position = "bottom")
-      # scale_x_continuous(breaks = 2*c(1:15)) +
-      
-      if (orde=="decreasing"){
-        p=p+ggtitle(paste(sit,"Removing distinct species first"))
-      } else if (orde=="increasing") {
-        p=p+ggtitle(paste(sit,"Removing distinct species last"))
-      }
-      p + ggsave(paste0("figures/Loreau-Hector/within_site_",measure,"_relatif=",relatif,"_",sit,"_",orde,".png"))
-    }
-  }
-}
-
-for (measure in MEASURE){
-  for (Sorted_by in c("Temperature","Precipitation")){
+for (relatif in c(T,F)){
+  for (measure in MEASURE){
     data3 <- read.table(paste0("data/processed/Loreau-Hector_",measure,"_relatif=",relatif,".txt"),header=T)
-    across_sites <- subset(data3,order=="increasing" & simul==1) # the first simul is the same whether the order is increasing or decreasing
-    if (Sorted_by == "Temperature"){
-      ord <- Site_descr[order(Site_descr$Temp_moy),]$Site # Sites ordered with increasing mean temperature
-    } else {
-      ord <- Site_descr[order(Site_descr$Annual_ppt),]$Site # Sites ordered with increasing mean temperature
+    for (sit in SITE){
+      for (orde in ORDER[1:2]){
+        within_site <- subset(data3,site==sit & order == orde)
+        # plot(toplot$simul,toplot$Selection,type="l")
+        # lines(toplot$simul,toplot$Cpltarity,type="l",col="2")#,ylim=c(-10000,300))
+        
+        p <- ggplot(within_site,aes(x=simul-1,y=Selection,color="Selection")) +
+          labs(x="Number of species removed",y=paste("LH coefficients",measure,"relatif=",relatif)) +
+          geom_line()+
+          # geom_ribbon(aes(ymin=int_min, ymax=int_max),fill="grey60", alpha=0.5,colour="black") +
+          geom_line(aes(x=simul-1,y=Cpltarity, color="Complementarity")) +
+          theme(legend.position = "bottom")
+        # scale_x_continuous(breaks = 2*c(1:15)) +
+        
+        if (orde=="decreasing"){
+          p=p+ggtitle(paste(sit,"Removing distinct species first"))
+        } else if (orde=="increasing") {
+          p=p+ggtitle(paste(sit,"Removing distinct species last"))
+        }
+        p + ggsave(paste0("figures/Loreau-Hector/within_site_",measure,"_relatif=",relatif,"_",sit,"_",orde,".png"))
+      }
     }
-    across_sites$site <- factor(across_sites$site,levels = ord )
-    
-    p2 <- ggplot(across_sites,aes(x=site,y=Selection,color="Selection")) +
-      labs(x=paste("Site sorted by",Sorted_by),y=paste("LH coefficients",measure,"relatif=",relatif)) +
-      geom_boxplot()+
-      # geom_ribbon(aes(ymin=int_min, ymax=int_max),fill="grey60", alpha=0.5,colour="black") +
-      geom_boxplot(aes(x=site,y=Cpltarity, color="Complementarity")) +
-      theme(legend.position = "bottom") +
-      theme(axis.text.x = element_text(angle = 45, hjust = 1))
-    p2 + ggsave(paste0("figures/Loreau-Hector/across_sites_",measure,"_relatif=",relatif,"_sorted by_",Sorted_by,".png"))
+  }
+}
+
+for (relatif in c(T,F)){
+  for (measure in MEASURE){
+    for (Sorted_by in c("Temperature","Precipitation")){
+      data3 <- read.table(paste0("data/processed/Loreau-Hector_",measure,"_relatif=",relatif,".txt"),header=T)
+      across_sites <- subset(data3,order=="increasing" & simul==1) # the first simul is the same whether the order is increasing or decreasing
+      if (Sorted_by == "Temperature"){
+        ord <- Site_descr[order(Site_descr$Temp_moy),]$Site # Sites ordered with increasing mean temperature
+      } else {
+        ord <- Site_descr[order(Site_descr$Annual_ppt),]$Site # Sites ordered with increasing mean temperature
+      }
+      across_sites$site <- factor(across_sites$site,levels = ord )
+      
+      p2 <- ggplot(across_sites,aes(x=site,y=Selection,color="Selection")) +
+        labs(x=paste("Site sorted by",Sorted_by),y=paste("LH coefficients",measure,"relatif=",relatif)) +
+        geom_boxplot()+
+        # geom_ribbon(aes(ymin=int_min, ymax=int_max),fill="grey60", alpha=0.5,colour="black") +
+        geom_boxplot(aes(x=site,y=Cpltarity, color="Complementarity")) +
+        theme(legend.position = "bottom") +
+        theme(axis.text.x = element_text(angle = 45, hjust = 1))
+      p2 + ggsave(paste0("figures/Loreau-Hector/across_sites_",measure,"_relatif=",relatif,"_sorted by_",Sorted_by,".png"))
+    }
   }
 }
 
 
+
+plot(within_site$DeltaY~within_site$simul,type="l")
+
+data3 <- summarise(data2,DeltaY=mean(DeltaY),YO=mean(YO),YE=mean(YE),Cpltarity=mean(Cpltarity),Selection=mean(Selection),Selection2=mean(Selection2))
+plot(data3$YE~data3$YO)
+abline(0,1)

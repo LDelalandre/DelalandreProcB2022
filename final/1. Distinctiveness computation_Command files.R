@@ -8,6 +8,13 @@ source("R/Common variables.R")
 traits<-read.table("data/Traits of the species_complete.txt",header=T)
 c1<-choice_traits_1(traits) # data.frame with the traits of the species
 ACP1<-PCA(c1)
+library(factoextra)
+jpeg("figures/PCA on traits.png",width = 800, height = 800, units = "px")
+fviz_pca_biplot(ACP1, repel = TRUE, # biplot
+                col.var = "#2E9FDF", # Couleur des variables
+                col.ind = "#696969"  # Couleur des individus 
+)
+dev.off()
 
 # position of the species on the first four axis
 distACP <- ACP1$ind$coord %>% 
@@ -30,6 +37,21 @@ for (site in SITE){
 }
 
 
+
+# File: order of removal and names of the species ####
+data <- read.table("data/raw/distinctiveness of the species.txt",header=T)
+
+decr <- data[order(data$Di,decreasing=T),]
+colnames(decr) <- c("Di_decr","species_decr")
+# write.table(decr,"data/decreasing order")
+
+incr <- data[order(data$Di,decreasing=F),]
+colnames(incr) <- c("Di_incr","species_incr")
+orders <- cbind(incr,decr)
+
+orders$lost_at_simul <- c(2:31)
+orders$nb_sp_lost <- orders$lost_at_simul - 1
+orders
 
 
 # Exploration of other distinctiveness calculations ####

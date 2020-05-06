@@ -88,4 +88,12 @@ for (sit in SITE){
 }
 
 
-
+# Command files for removing species according to abundance ####
+res <- read.table(paste0("data/raw/output-cmd2_",site,"_",order,".txt/forceps.",site,".site_",number,"_complete.txt"))
+colnames(res) <- colnames_res
+temp_plot <- temporal_plot(res)
+dates <- as.numeric(max(temp_plot$date))- c(900,800,700,600,500,400,300,200,100,0) # years on which we average the biomass
+years_to_keep <- subset(temp_plot,date %in%dates)
+biomasses <- aggregate(years_to_keep$biomass, list(years_to_keep$species), mean)
+colnames(biomasses) <- c("species","biomass")
+biomasses[order(biomasses$biomass,decreasing=T),]

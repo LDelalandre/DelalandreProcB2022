@@ -18,8 +18,8 @@ yearstobejumped <- 999
 timestep <- 100
 
 
-SITE <- c("GrandeDixence","Bever","Davos","Adelboden","Huttwil","Schwerin","Bern","Cottbus","Basel"
-          ) #,"Schaffhausen","Sion")
+SITE <- c("GrandeDixence","Bever","Davos","Adelboden","Huttwil","Schwerin","Bern","Cottbus","Basel","Schaffhausen"
+          ,"Sion")
 # ordered in growing temperature
 Site_descr <- read.table("data/Site description.txt",header=T)
 

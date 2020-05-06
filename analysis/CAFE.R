@@ -1,16 +1,12 @@
 # Done using the code from "BaylesRdInvasionExampleRCode_101.R"
-library("dplyr")
+source("R/Common variables.R")
+source("R/Analysis_data.R")
+source("R/Price functions.R")
 library("priceTools")
-library("ggplot2")
 library(gridExtra)
 
-SITE <- c("Bern","Bever","Cottbus","Huttwil")
 site <- SITE[1]
-ORDER <- c("increasing", "decreasing", "random_1" ,  "random_2")
 order <- ORDER[1]
-
-source("R/Analysis_data.R")
-
 
 # Write the tables ####
 # NB: Takes a few minuts!
