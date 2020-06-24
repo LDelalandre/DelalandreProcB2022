@@ -2,6 +2,7 @@ source("R/Common variables.R")
 source("R/Analysis_data.R")
 source("R/Monocultures_functions.R")
 source("R/Before simulations.R")
+library(stringr)
 
 TOTAL <- read.table("data/processed/specific_biom_prod_complete.txt",header=T)
 # Traits et sites
@@ -180,7 +181,7 @@ traits2 <- choice_traits_1(traits)
 traits2 <- select(traits2,-c(A1max,A2))# remove traits that say explicitely that a species is a gymnosperm
 
 # Add columns  with the biomas and productivity of the species to predict them from the traits - for each site
-sit <- SITE[1]
+sit <- SITE[4]
 #  [1] "GrandeDixence" "Bever"         "Davos"         "Adelboden"     "Huttwil"       "Schwerin"      "Bern"         
 # [8] "Cottbus"       "Basel"         "Schaffhausen"  "Sion"    
 orde <- ORDER[1]
@@ -189,25 +190,56 @@ SUB <- subset(TOTAL, site==sit & order==orde & simul ==simu)
 SUB2 <- arrange(SUB,factor(SUB$species,levels = traits$SName )) # species in the same order as in the trait data frame
 prod_mixture <- SUB2$prod_mixture
 pooled <- data.frame(prod_mixture,traits2)
+colnames(pooled)[1] <- "prod"
+
+# for monocultures ####
+sit <- SITE[8]
+prod_mono <- read.table(paste0("data/processed/productivity_monoculture_",sit,".txt"),header=T)
+pooled_mono <- data.frame(prod_mono$monoculture,traits2)
+colnames(pooled_mono)[1] <- "prod"
 # pooled<-subset(pooled,!(prod_mixture<0)) # pour pouvoir transformer les variables, il me faut une variable réponse positive
  
-# library(corrplot)
-# corrplot.mixed(cor(pooled), order="hclust", tl.col="black")
+par(mfrow=c(1,1)) ; corrplot::corrplot.mixed(cor(pooled_mono), order="hclust", tl.col="black")
+# I remove La (highly correlated with Ly), as well as NTol and WiTX (cor with DDmin > 0.5)
+
+# on which data do I work
+dat <- subset(pooled_mono,prod>0)
+# dat <- pooled_mono
 
 # linear model (12 potential explanatory variables !!)
-null <- lm(prod_mixture^0.1~1,data=pooled)
-full <- lm(prod_mixture^0.1~ S +   HMax + AMax+  G  +  DDMin  +   WiTN +WiTX + DrTol    +        
-                       NTol      +  Brow + Ly  ,data=pooled) # puissance 0.25 : pas mal !
-par(mfrow=c(2,2))
-plot(full)
+# CAREFUL: in stressful sites, I sometimes have less that 12 species persisting... 
+# ... and consequently more observations than variables.
 
-step(null, scope = ~ S +   HMax + AMax+  G  +  DDMin  +   WiTN +WiTX + DrTol    +        
-       NTol      +  Brow + Ly ,
+
+null <- lm(prod~1,data=dat)
+full <- lm(prod ~ S +   HMax + AMax+  G  +  DDMin  +   WiTN  + DrTol    +        
+                        Brow + Ly  ,data=dat) # +WiTX + NTol      + La
+par(mfrow=c(2,2)) ; plot(full)
+
+step(null, scope = ~ S +   HMax + AMax+  G  +  DDMin  +   WiTN  + DrTol    +
+          Brow + Ly ,
      direction="both", criterion = "BIC")
 step(full, scope = ~ 1 ,
      direction="both", criterion = "AIC")
 
+GrandeDixence <- lm(formula = prod ~ S + HMax + AMax + G + DDMin + WiTN + DrTol + 
+                     Brow + Ly, data = dat)
+Bever <- lm(formula = prod ~ S + G + DDMin + WiTN + DrTol + Brow, data = dat)
+Davos <- lm(formula = prod ~ G + DDMin + DrTol + Brow + Ly, data = dat)
+Adelboden <- lm(formula = prod ~ S + HMax + AMax + DrTol + Ly, data = dat)
+Huttwil <- lm(formula = prod ~ S + HMax + AMax + DDMin + DrTol + Brow, data = dat)
+Schwerin <- lm(formula = prod ~ S + HMax + G + DrTol + Brow, data = dat)
+Bern <- lm(formula = prod ~ S + HMax + AMax + G + DrTol + Brow, data = dat)
+Cottbus <- lm(formula = prod ~ S + HMax + G + DDMin + DrTol + Brow + Ly, 
+              data = dat)
+Basel <- lm(formula = prod ~ S + HMax + DrTol + Brow, data = dat)
+Schaffhausen <- lm(formula = prod ~ S + HMax + AMax + DrTol + Brow, data = dat)
+Sion <- lm(formula = prod ~ DrTol + Ly, data = dat)
 
+
+
+car::Anova(Cottbus)
+# MBESS::effect.size(Adelboden)
 
 library(car)
 predictors <- read.table("data/processed/Prediction productivity~traits.txt",header=T)
@@ -232,27 +264,49 @@ cor(pooled)
 
 # Correlate biomass and distinctiveness in monoculture ####
 site <- SITE[1]
-correlations <- c()
-par(mfrow=c(3,4))
 for (site in SITE){
-  biom <- read.table(paste0("data/processed/biomass_monoculture_",site,".txt"),header=T)
-  correlations <- c(correlations,cor(biom$Di,biom$monoculture.t.ha.) )
-  plot(biom$Di,biom$monoculture.t.ha.,main=site)
+  ggplot(data=biom,
+         aes(x=Di,y=monoculture.t.ha.,label=SName))+
+    geom_point() +
+    geom_text(aes(label=SName),hjust=0, vjust=0) +
+    ggtitle(site) +
+    ggsave(paste0("figures/Correlation distinctiveness biomass/monocultures",site,".png"))
+  mod <- lm(monoculture.t.ha.^0.01~Di,data=biom)
+  plot(mod)
 }
-cor <- data.frame(SITE,correlations)
-par(mfrow=c(1,1))
-plot(cor$cor~cor$SITE)        
+
+correlations <- c()
+pval <- c()
+for (site in SITE){
+  print(site)
+  biom <- read.table(paste0("data/processed/biomass_monoculture_",site,".txt"),header=T)
+  biom <- subset(biom,!(SName %in% c("PCem","LDec")))
+  correlations <- c(correlations,cor(biom$Di,biom$monoculture.t.ha.,method="kendall") )
+  test <- cor.test(biom$Di,biom$monoculture.t.ha.,alternative="two.sided",method = "kendall")
+  pval <- c(pval,test$p.value)
+}
+cor <- data.frame(SITE,correlations,pval)
+temp_order <- c("GrandeDixence" ,"Bever"     ,    "Davos"      ,   "Adelboden"   ,  "Huttwil"    ,  
+                "Schwerin"  ,    "Bern" ,         "Schaffhausen" , "Cottbus"    ,   "Basel"       ,
+                "Sion" ) # sites ordered by increasing temperature
+cor$SITE <- factor(cor$SITE,levels=temp_order)
+
+# Pas normalité
+# hist(biom$Di)
+# hist(biom$monoculture.t.ha.)
+
+ggplot(cor, aes(x=SITE, y=correlations)) +
+  geom_boxplot() 
+
+
 
 # Look at the distinctiveness of the remaining species ####
-sit <- "Bever"
-current_site <- read.table(paste0("data/processed/biomass_monoculture_",sit,".txt"),header=T)
-sp <- as.character(subset(bever,monoculture.t.ha.>0)$SName)
-traits2 <- subset(traits,SName %in% sp)
 
 # compute functional distinctiveness
 comp_fct_dist <- function(traits){
-  c1<-choice_traits_1(traits2) # data.frame with the traits of the species
-  ACP1<-PCA(c1)
+  c1<-choice_traits_1(traits) # data.frame with the traits of the species
+  c1 <- select(c1,-c(A1max,A2))# remove traits that say explicitely that a species is a gymnosperm
+  ACP1<-PCA(c1,graph=F)
   distACP <- ACP1$ind$coord %>% 
     as.data.frame() %>%
     select(Dim.1    ,   Dim.2     ,   Dim.3      ,  Dim.4) %>%
@@ -263,7 +317,156 @@ comp_fct_dist <- function(traits){
   distinct_tot[order(distinct_tot$Di),]
 }
 
-comp_fct_dist(traits2)
 
-# On dirait que, quelque soit le site, les espèces les plus distinctes 
-#  dans le pool local sont celles qui sont le pool régional
+correlation <- c()
+Di <- comp_fct_dist(traits)
+orDi <- Di[order(Di$Di,decreasing=T),] # remove distinct species last
+for (i in c(1:30)){
+  subDi <- orDi[i:30,] # remaining species after having removed i-1 species 
+  subtraits <- subset(traits,as.character(SName) %in% subDi$SName) # traits of these remaining species
+  newDi <- comp_fct_dist(subtraits) # compute fct dist on these remaining species
+  subDi <- subset(Di,SName %in% newDi$SName) # keep the original distinctiveness (calculated relatively to all the species) of these remaining species
+  A <- newDi[str_order(newDi$SName),] # I need the species to be in the same order to compute spearman's correlation
+  B <- subDi[str_order(subDi$SName),]
+  cor <- cor(A$Di,B$Di,method="spearman") # compare how distinctiveness sorts the species in the two cases
+  # remember that the order with all the species is the one we used for the removal experiments. Is it the same as that of a local distinctiveness ?
+  # it is not exactly matthias' question, which would require taking the ACTUAL species remaining at the end of the simulations.
+  correlation <- c(correlation,cor)
+}
+plot(c(1:length(correlation)),correlation)
+
+# fct dist for remaining species ####
+orde <- "random_10"
+prod <- read.table("data/processed/productivity_specific_GrandeDixence_with monocultures.txt",header=T)
+correlation <- c()
+for (simu in c(3,5,7,9,11,13,15,17,19,21,23,25,27)){
+  sub <- subset(prod,order==orde & simul==simu) # remaining species
+  sub <- sub[which(sub$mixture_t_ha>0),]
+  subtraits <- subset(traits,as.character(SName) %in% sub$species) # traits of these remaining species
+  newDi <- comp_fct_dist(subtraits) # compute fct dist on these remaining species
+  subDi <- subset(Di,SName %in% newDi$SName) # keep the original distinctiveness (calculated relatively to all the species) of these remaining species
+  A <- newDi[str_order(newDi$SName),] # I need the species to be in the same order to compute spearman's correlation
+  B <- subDi[str_order(subDi$SName),]
+  cor <- cor(A$Di,B$Di,method="spearman") # compare how distinctiveness sorts the species in the two cases
+  correlation <- c(correlation,cor)
+}
+plot(c(1:length(correlation)),correlation)
+
+sub[order(sub$species),] # productivity of the species
+newDi[order(newDi$SName),]
+
+# look at the correlation between distinctiveness and productivity for these persisting species
+NEW <- newDi[order(newDi$SName),]
+NEW$prod <- sub[order(sub$species),]$mixture_t_ha
+plot(NEW$Di,NEW$prod)
+
+
+# Local pool_monocultures_recompute fct distinctiveness ####
+sit <- "GrandeDixence"
+sit <- "Bever"
+sit <- "Davos"
+
+Di <- comp_fct_dist(traits)
+cor_site <- c()
+nb_sp <- c()
+for (sit in SITE){
+  current_site <- read.table(paste0("data/processed/biomass_monoculture_",sit,".txt"),header=T)
+  sp <- as.character(subset(current_site,monoculture.t.ha.>0)$SName)
+  # if I want to do it for species that persist, and not for monocultures
+  # current_site <- read.table(paste0("data/processed/productivity_specific_",sit,".txt"),header=T)
+  # sp <- as.character(subset(current_site,mixture_t_ha>0 & order=="increasing" & simul==1)$species)
+  
+  traits3 <- subset(traits,SName %in% sp)
+  newDi <- comp_fct_dist(traits3) # compute fct dist on these remaining species
+  subDi <- subset(Di,SName %in% newDi$SName) # keep the original distinctiveness (calculated relatively to all the species) of these remaining species
+  A <- newDi[str_order(newDi$SName),] # I need the species to be in the same order to compute spearman's correlation
+  B <- subDi[str_order(subDi$SName),]
+  coefcor <- cor(A$Di,B$Di,method="spearman") # compare how distinctiveness sorts the species in the two cases
+  cor_site <- c(cor_site, coefcor)
+  nb_sp <- c(nb_sp,length(sp))
+}
+
+data.frame(SITE,cor_site,nb_sp)
+
+# pour ce qui suit, ne pas faire tourner la boucle, mais exécuter le code pour seulement un site
+cor.test(A$Di,B$Di,alternative="two.sided",method = "spearman")
+
+biom <- read.table(paste0("data/processed/biomass_monoculture_",sit,".txt"),header=T)
+abdist <- data.frame(newDi$Di,newDi$SName) # se if the abundance/dist relationships holds locally (with monocultures)
+colnames(abdist) <- c("Di","SName")
+ab <- c()
+for (i in c(1:dim(abdist)[1])){
+  ab <- c(ab,biom[which(as.character(biom$SName)==as.character(abdist[i,]$SName)),]$monoculture.t.ha.)
+}
+abdist$abundance_mono <- ab
+plot(abdist$Di,abdist$abundance)
+abdist
+
+# A Bever, la corrélation n'est que de 0.42... Donc pas super maintien de l'ordre de distinctiveness pour le pool local.
+A1 <- A[1:floor(dim(A)[1]/2),] # se if the second half (most distinct species) still correlates or not
+A2 <- A[(floor(dim(A)[1]/2)+1):dim(A)[1],]
+B1 <- B[1:floor(dim(B)[1]/2),]
+B2 <- B[(floor(dim(B)[1]/2)+1):dim(B)[1],]
+cor(A1$Di,B1$Di,method="spearman") # 0.23
+cor(A2$Di,B2$Di,method="spearman") # 0.81 à Bever
+# It seems that the most distinct species' order does not change must when we compute distinctiveness on the local pool
+# For unstressful sites, the correlation is perfect, because we keep all the species (they can all grow in monoculture)
+# In stressful sites : either the correlation is not so nad (GrandeDixence, 0.65)
+# or it is quite bad, but is it good for the distinct half of the species (cf. Bever, 0.4 but 0.81 for the distinct half)
+
+# sensib_fct dist_traits ####
+# traits2 is the data frame of traits
+selected_traits<-choice_traits_1(traits) # data.frame with the traits of the species
+selected_traits <- select(selected_traits,-c(A1max,A2))# remove traits that say explicitely that a species is a gymnosperm
+
+comp_dist_selected_traits <- function(selected_traits){
+  # This function computes fct distinctinveness on a trait matrix containing only the 12 traits
+  # that were used for ranking the species.
+  # I use it for bootstraping on these 12 traits
+  ACP1<-PCA(selected_traits,graph=F)
+  distACP <- ACP1$ind$coord %>% 
+    as.data.frame() %>%
+    select(Dim.1    ,   Dim.2     ,   Dim.3      ,  Dim.4) %>%
+    traits_dist() # here we compute the functional distinctiveness
+  distACP$SName<-rownames(distACP)
+  
+  distinct_tot <-  distACP
+  distinct_tot[order(distinct_tot$SName),]$Di
+}
+
+
+init_dist <- comp_dist_selected_traits(selected_traits)
+
+corstat <- c()
+for (i in c(1:1000)){
+  col <- sample(c(1:12),size=12,replace=T) # randomly select 12 columns to keep (with replacement) from the trait matrix
+  boot_traits <- selected_traits[,col]
+  boot_dist <- comp_dist_selected_traits(boot_traits)
+  boot_cor <- cor(init_dist,boot_dist,method="spearman")
+  corstat <- c(corstat,boot_cor)
+}
+summary(corstat)
+hist(corstat)
+
+# prod added to PCA on traits ####
+# I will add columns to traits 2. 
+# In each column, I put the productivity of each species in monoculture in a given site
+traits2[order(rownames(traits2)),]
+for (sit in SITE){
+  prod <- read.table("data/processed/productivity_specific_GrandeDixence_with monocultures.txt",header=T)
+  PR <- read.table(paste0("data/processed/productivity_monoculture_",sit,".txt"),header=T)
+  traits2 <- cbind(traits2,PR[order(PR$SName),]$monoculture)
+}
+colnames(traits2)[c(13:23)] <- SITE
+
+# then I can make a PCA, on which plot the supplementary variables (for each site,  
+# the productivity of the species)
+res.pca <- PCA(traits2, ind.sup = NULL, 
+               quanti.sup = 13:23, quali.sup = NULL, graph=FALSE)
+fviz_pca_var(res.pca)
+
+
+traits2.active <- traits2[,1:12]
+library("ade4")
+PCA(traits2[,c(1:12)],graph=T)
+s.arrow(traits2[,c(13:23)])

@@ -47,7 +47,7 @@ Cmd_given_order<-function(order2,length,yearstobejumped,timestep,site){ # distin
 }      
 
 # Read the results of the simulations ####
-site <- "Sion" # Bern ou Sion
+site <- "GrandeDixence" # Bern ou Sion
 # Au final, il me suffira de :
 # ne pas toucher à la fonction productivity_specific, mais ajouter "abundance" comme élément du vecteur ORDER
 
