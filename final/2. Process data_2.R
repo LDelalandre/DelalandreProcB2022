@@ -89,6 +89,7 @@ for (sit in SITE){
 
 
 # Command files for removing species according to abundance ####
+# attention, ce n'est aps de ça que je me suis servi (à retirer, donc ?)
 res <- read.table(paste0("data/raw/output-cmd2_",site,"_",order,".txt/forceps.",site,".site_",number,"_complete.txt"))
 colnames(res) <- colnames_res
 temp_plot <- temporal_plot(res)

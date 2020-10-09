@@ -7,7 +7,10 @@ source("R/Common variables.R")
 
 traits<-read.table("data/Traits of the species_complete.txt",header=T)
 c1<-choice_traits_1(traits) # data.frame with the traits of the species
+# c1-select(c1,-DDMin) 
+# cprime <- select(c1,-c(A1max,A2))
 ACP1<-PCA(c1)
+# ACPprime <- PCA(cprime)
 library(factoextra)
 jpeg("figures/PCA on traits.png",width = 800, height = 800, units = "px")
 fviz_pca_biplot(ACP1, repel = TRUE, # biplot
@@ -52,6 +55,7 @@ orders <- cbind(incr,decr)
 orders$lost_at_simul <- c(2:31)
 orders$nb_sp_lost <- orders$lost_at_simul - 1
 orders
+write.table(orders,"data/removal order and sp names.txt",row.names=F,sep="\t")
 
 
 # Exploration of other distinctiveness calculations ####
