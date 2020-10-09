@@ -11,6 +11,18 @@ sites <- read.table("data/Site description.txt",header=T)
 rownames(sites) <- sites$Site
 
 orders <- read.table("data/removal order and sp names.txt",header=T)
+
+# Correlation between traits ####
+c1<-choice_traits_1(traits) # data.frame with the traits of the species
+
+library("ggcorrplot")
+corr <- cor(c1)
+plot_cor <- ggcorrplot(corr,
+           hc.order = TRUE,
+           type = "lower",
+           lab = TRUE,digits=1)
+ggsave ("paper/correlation between traits.png",plot=plot_cor,dpi="print",width=17,units="cm")
+
 # Separate the sites depending on when the highest drop of ecosystem function occurs when removing species. ####
 measure <- MEASURE[2]
 
@@ -181,25 +193,61 @@ traits2 <- choice_traits_1(traits)
 traits2 <- select(traits2,-c(A1max,A2))# remove traits that say explicitely that a species is a gymnosperm
 
 # Add columns  with the biomas and productivity of the species to predict them from the traits - for each site
-sit <- SITE[4]
+
 #  [1] "GrandeDixence" "Bever"         "Davos"         "Adelboden"     "Huttwil"       "Schwerin"      "Bern"         
 # [8] "Cottbus"       "Basel"         "Schaffhausen"  "Sion"    
 orde <- ORDER[1]
 simu <- 1
+
+sit <- SITE[1]
 SUB <- subset(TOTAL, site==sit & order==orde & simul ==simu)
 SUB2 <- arrange(SUB,factor(SUB$species,levels = traits$SName )) # species in the same order as in the trait data frame
 prod_mixture <- SUB2$prod_mixture
-pooled <- data.frame(prod_mixture,traits2)
-colnames(pooled)[1] <- "prod"
+biomass <- SUB2$mixture.t.ha.
+pooled <- data.frame(biomass,prod_mixture,traits2)
+colnames(pooled)[1:2] <- c("biomass","prod")
+pooled$site <- sit
+pooled$species <- rownames(pooled)
+for (sit in SITE[2:11]){
+  SUB <- subset(TOTAL, site==sit & order==orde & simul ==simu)
+  SUB2 <- arrange(SUB,factor(SUB$species,levels = traits$SName )) # species in the same order as in the trait data frame
+  prod_mixture <- SUB2$prod_mixture
+  biomass <- SUB2$mixture.t.ha.
+  pooled2 <- data.frame(biomass,prod_mixture,traits2)
+  colnames(pooled2)[1:2] <- c("biomass","prod")
+  pooled2$site <- sit
+  pooled2$species <- rownames(pooled2)
+  pooled <- rbind(pooled,pooled2)
+}
+write.table(pooled,"data/processed/data productivity and biomass~traits_mixture.txt",row.names=F)
 
 # for monocultures ####
-sit <- SITE[8]
+# create a data frame with all the monocultures
+sit <- SITE[1]
 prod_mono <- read.table(paste0("data/processed/productivity_monoculture_",sit,".txt"),header=T)
-pooled_mono <- data.frame(prod_mono$monoculture,traits2)
+biom_mono <- read.table(paste0("data/processed/biomass_monoculture_",sit,".txt"),header=T)
+pooled_mono <- data.frame(prod_mono$monoculture,biom_mono$monoculture.t.ha.,traits2)
 colnames(pooled_mono)[1] <- "prod"
+colnames(pooled_mono)[2] <- "biomass"
+dat <- pooled_mono
+dat$site <- sit
+dat$species <- rownames(dat)
+for (sit in SITE[2:11]){
+  prod_mono <- read.table(paste0("data/processed/productivity_monoculture_",sit,".txt"),header=T)
+  biom_mono <- read.table(paste0("data/processed/biomass_monoculture_",sit,".txt"),header=T)
+  pooled_mono <- data.frame(prod_mono$monoculture,biom_mono$monoculture.t.ha.,traits2)
+  colnames(pooled_mono)[1] <- "prod"
+  colnames(pooled_mono)[2] <- "biomass"
+  dat2 <- pooled_mono
+  dat2$site <- sit
+  dat2$species <- rownames(dat2)
+  dat <- rbind(dat,dat2)
+}
+
+write.table(dat,"data/processed/data productivity~traits_monoculture.txt",row.names = F)
 # pooled<-subset(pooled,!(prod_mixture<0)) # pour pouvoir transformer les variables, il me faut une variable réponse positive
  
-par(mfrow=c(1,1)) ; corrplot::corrplot.mixed(cor(pooled_mono), order="hclust", tl.col="black")
+# par(mfrow=c(1,1)) ; corrplot::corrplot.mixed(cor(pooled_mono), order="hclust", tl.col="black")
 # I remove La (highly correlated with Ly), as well as NTol and WiTX (cor with DDmin > 0.5)
 
 # on which data do I work
@@ -263,41 +311,93 @@ pooled
 cor(pooled)
 
 # Correlate biomass and distinctiveness in monoculture ####
-site <- SITE[1]
-for (site in SITE){
+sit <- SITE[1]
+for (sit in SITE){
+  biom <- read.table(paste0("data/processed/biomass_monoculture_",sit,".txt"),header=T)
   ggplot(data=biom,
          aes(x=Di,y=monoculture.t.ha.,label=SName))+
     geom_point() +
     geom_text(aes(label=SName),hjust=0, vjust=0) +
-    ggtitle(site) +
-    ggsave(paste0("figures/Correlation distinctiveness biomass/monocultures",site,".png"))
-  mod <- lm(monoculture.t.ha.^0.01~Di,data=biom)
-  plot(mod)
+    ggtitle(sit) #+
+    # ggsave(paste0("figures/Correlation distinctiveness biomass/monocultures",sit,".png"))
+  # mod <- lm(monoculture.t.ha.^0.01~Di,data=biom)
+  # plot(mod)
 }
 
+# plot the correlations as a funciton of the sites
 correlations <- c()
 pval <- c()
 for (site in SITE){
   print(site)
   biom <- read.table(paste0("data/processed/biomass_monoculture_",site,".txt"),header=T)
-  biom <- subset(biom,!(SName %in% c("PCem","LDec")))
+  # biom <- subset(biom,!(SName %in% c("PCem","LDec")))
   correlations <- c(correlations,cor(biom$Di,biom$monoculture.t.ha.,method="kendall") )
   test <- cor.test(biom$Di,biom$monoculture.t.ha.,alternative="two.sided",method = "kendall")
   pval <- c(pval,test$p.value)
-}
+} 
+#  NB Impossible de calculer la p-value exacte avec des ex-aequos
+#  --> Soit faire des permutations, soit se satisfaire de ces p-values
 cor <- data.frame(SITE,correlations,pval)
 temp_order <- c("GrandeDixence" ,"Bever"     ,    "Davos"      ,   "Adelboden"   ,  "Huttwil"    ,  
                 "Schwerin"  ,    "Bern" ,         "Schaffhausen" , "Cottbus"    ,   "Basel"       ,
                 "Sion" ) # sites ordered by increasing temperature
 cor$SITE <- factor(cor$SITE,levels=temp_order)
 
-# Pas normalité
-# hist(biom$Di)
-# hist(biom$monoculture.t.ha.)
-
 ggplot(cor, aes(x=SITE, y=correlations)) +
   geom_boxplot() 
 
+
+# Correlate biomass and distinctiveness in mixtures ####
+
+sit <- SITE[1]
+for (sit in SITE){
+  BIOM <- subset(TOTAL, site==sit & order=="increasing" & simul==1)
+  ggplot(data=BIOM,
+         aes(x=dist,y=mixture.t.ha.,label=species))+
+    geom_point() +
+    geom_text(aes(label=species),hjust=0, vjust=0) +
+    ggtitle(paste0(sit," mixture")) #+
+    ggsave(paste0("figures/Correlation distinctiveness biomass/mixture",sit,".png"))
+}
+
+# Correlate biomass in mixture and mono ####
+sit <- SITE[1]
+for (sit in SITE){
+  BIOM <- subset(TOTAL, site==sit & order=="increasing" & simul==1)
+  ggplot(data=BIOM,
+         aes(x=monoculture.t.ha.,y=mixture.t.ha.,label=species))+
+    geom_point() +
+    geom_text(aes(label=species),hjust=0, vjust=0) +
+    ggtitle(paste0(sit)) +
+  ggsave(paste0("figures/Correlation distinctiveness biomass/biomass mono_mixt_",sit,".png"))
+}
+
+# Correlate biomass and productivity in monocultures ####
+sit <- SITE[1]
+for (sit in SITE){
+  BIOM <- subset(TOTAL, site==sit & order=="increasing" & simul==1)
+  # mod <- lm(log(1+BIOM$prod_monoculture)~BIOM$monoculture.t.ha.)
+  # plot(mod) # hypothèses non respectées.
+  # summary(mod) # la biomasse explique une grande part de la variance dans la productivité
+  ggplot(data=BIOM,
+         aes(x=monoculture.t.ha.,y=prod_monoculture,label=species))+
+    geom_point() +
+    geom_text(aes(label=species),hjust=0, vjust=0) +
+    ggtitle(paste0(sit)) +
+    ggsave(paste0("figures/Correlation distinctiveness biomass/biomass_prod_mono_",sit,".png"))
+}
+
+# Correlate biomass and productivity in mixture ####
+sit <- SITE[1]
+for (sit in SITE){
+  BIOM <- subset(TOTAL, site==sit & order=="increasing" & simul==1)
+  ggplot(data=BIOM,
+         aes(x=mixture.t.ha.,y=prod_mixture,label=species))+
+    geom_point() +
+    geom_text(aes(label=species),hjust=0, vjust=0) +
+    ggtitle(paste0(sit)) +
+    ggsave(paste0("figures/Correlation distinctiveness biomass/biomass_prod_mixt_",sit,".png"))
+}
 
 
 # Look at the distinctiveness of the remaining species ####
@@ -350,7 +450,7 @@ for (simu in c(3,5,7,9,11,13,15,17,19,21,23,25,27)){
   cor <- cor(A$Di,B$Di,method="spearman") # compare how distinctiveness sorts the species in the two cases
   correlation <- c(correlation,cor)
 }
-plot(c(1:length(correlation)),correlation)
+plot(2*c(1:length(correlation)),correlation,xlab="Number of species removed",ylab="Correlation")
 
 sub[order(sub$species),] # productivity of the species
 newDi[order(newDi$SName),]
@@ -417,7 +517,7 @@ cor(A2$Di,B2$Di,method="spearman") # 0.81 à Bever
 # sensib_fct dist_traits ####
 # traits2 is the data frame of traits
 selected_traits<-choice_traits_1(traits) # data.frame with the traits of the species
-selected_traits <- select(selected_traits,-c(A1max,A2))# remove traits that say explicitely that a species is a gymnosperm
+# selected_traits <- select(selected_traits,-c(A1max,A2))# remove traits that say explicitely that a species is a gymnosperm
 
 comp_dist_selected_traits <- function(selected_traits){
   # This function computes fct distinctinveness on a trait matrix containing only the 12 traits
@@ -446,7 +546,13 @@ for (i in c(1:1000)){
   corstat <- c(corstat,boot_cor)
 }
 summary(corstat)
-hist(corstat)
+sd(corstat)
+
+jpeg("paper/histogram bootstrap.jpg", width = 350, height = 350)
+hist(corstat,main="Bootstrap distribution of rho", xlab="Rho")
+dev.off()
+
+
 
 # prod added to PCA on traits ####
 # I will add columns to traits 2. 
@@ -470,3 +576,6 @@ traits2.active <- traits2[,1:12]
 library("ade4")
 PCA(traits2[,c(1:12)],graph=T)
 s.arrow(traits2[,c(13:23)])
+
+
+

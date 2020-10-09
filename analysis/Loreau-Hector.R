@@ -7,7 +7,7 @@ source("R/Common variables.R")
 
 ####
 # NB: ajouter une option: relatif/absolu
-data <- read.table("data/processed/specific_biom_prod_complete.txt",header=T)
+TOTAL <- read.table("data/processed/specific_biom_prod_complete.txt",header=T)
 measure <- "biomass_tot"
 relatif=F
 
@@ -15,22 +15,22 @@ LH <- function(measure,relatif){
   # relatif=T or F
   if (measure=="biomass_tot"){
     if (relatif == F){
-      data <- select(data,species, mixture.t.ha.,monoculture.t.ha.,site, order, simul)
+      data <- select(TOTAL,species, mixture.t.ha.,monoculture.t.ha.,site, order, simul)
       names(data)[names(data) == "mixture.t.ha."] <- "YOi"
       names(data)[names(data) == "monoculture.t.ha."] <- "Mi"
     } else{
-      data <- select(data,species, mixture_relative,monoculture_relative,site, order, simul)
+      data <- select(TOTAL,species, mixture_relative,monoculture_relative,site, order, simul)
       names(data)[names(data) == "mixture_relative"] <- "YOi"
       names(data)[names(data) == "monoculture_relative"] <- "Mi"
     }
 
   }else{
     if (relatif == F){
-      data <- select(data,species, prod_mixture,prod_monoculture,site, order, simul)
+      data <- select(TOTAL,species, prod_mixture,prod_monoculture,site, order, simul)
       names(data)[names(data) == "prod_mixture"] <- "YOi"
       names(data)[names(data) == "prod_monoculture"] <- "Mi"
     }
-    data <- select(data,species, prod_mixture_relative,prod_monoculture_relative,site, order, simul)
+    data <- select(TOTAL,species, prod_mixture_relative,prod_monoculture_relative,site, order, simul)
     names(data)[names(data) == "prod_mixture_relative"] <- "YOi"
     names(data)[names(data) == "prod_monoculture_relative"] <- "Mi"
   }
@@ -76,6 +76,7 @@ LH <- function(measure,relatif){
   data2
 }
 
+# Compute loreau-hector values for relative and absolute biomass and productivity
 for (relatif in c(T,F)){
   for (measure in MEASURE){
     data2 <- LH(measure,relatif)
@@ -89,6 +90,7 @@ for (relatif in c(T,F)){
 # sit <- "Bever"
 # orde <- ORDER[1]
 # simu <- 1
+# LH evolution with species removal within site
 for (relatif in c(T,F)){
   for (measure in MEASURE){
     data3 <- read.table(paste0("data/processed/Loreau-Hector_",measure,"_relatif=",relatif,".txt"),header=T)
@@ -117,15 +119,29 @@ for (relatif in c(T,F)){
   }
 }
 
+# Sort sites according to their hydric stress index ####
+drought_index <- c()
+for (site in SITE){
+  mean <- read.table(paste0("data/raw/output-cmd2_",site,"_decreasing.txt/forceps.",site,".site_1_mean.txt"))
+  colnames(mean) <- colnames_mean
+  to_keep <- subset(mean,date %in% (as.numeric(max(mean$date))- c(900,800,700,600,500,400,300,200,100,0))) 
+  drought_index <- c(drought_index,mean(to_keep$droughtIndexAnnual))
+}
+DROUGHT <- data.frame(SITE,drought_index)
+write.table(DROUGHT,"data/drought index.txt",row.names=F)
+
+# LH values for the first simulation of each site ####
 for (relatif in c(T,F)){
   for (measure in MEASURE){
-    for (Sorted_by in c("Temperature","Precipitation")){
+    for (Sorted_by in c("Temperature","Precipitation","Drought_index")){
       data3 <- read.table(paste0("data/processed/Loreau-Hector_",measure,"_relatif=",relatif,".txt"),header=T)
       across_sites <- subset(data3,order=="increasing" & simul==1) # the first simul is the same whether the order is increasing or decreasing
       if (Sorted_by == "Temperature"){
         ord <- Site_descr[order(Site_descr$Temp_moy),]$Site # Sites ordered with increasing mean temperature
-      } else {
+      } else if (Sorted_by=="Precipitation") {
         ord <- Site_descr[order(Site_descr$Annual_ppt),]$Site # Sites ordered with increasing mean temperature
+      } else {
+        ord <- DROUGHT[order(DROUGHT$drought_index),]$SITE
       }
       across_sites$site <- factor(across_sites$site,levels = ord )
       

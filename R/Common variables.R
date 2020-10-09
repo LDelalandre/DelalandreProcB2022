@@ -6,6 +6,7 @@ library("funrar")
 library(ggplot2)
 library(tidyr)
 
+TOTAL <- read.table("data/processed/specific_biom_prod_complete.txt",header=T)
 
 # Variables ####
 colnames_mean<-colnames(read.table("data/colnames_mean.txt",header=T)) # idem
@@ -20,8 +21,12 @@ timestep <- 100
 
 SITE <- c("GrandeDixence","Bever","Davos","Adelboden","Huttwil","Schwerin","Bern","Cottbus","Basel","Schaffhausen"
           ,"Sion")
-# ordered in growing temperature
+# ordered in growing temperature :
 Site_descr <- read.table("data/Site description.txt",header=T)
+ord_temp <- as.character(Site_descr[order(Site_descr$Temp_moy),]$Site)
+
+ord_plots <- c("GrandeDixence","Bever","Davos","Basel","Cottbus","Schaffhausen","Schwerin","Sion",
+               "Adelboden","Bern","Huttwil")
 
 
 # SITE <- c("Bern","Bever","Cottbus","Huttwil","Adelboden","Basel","GrandeDixence")
@@ -35,4 +40,4 @@ ORDER <- c("increasing","decreasing","random_1","random_2","random_3","random_4"
 
 # MEASURE <- c("biomass_tot","sd_biomass_tot","CV_biomass_tot",
              # "productivity_tot","sd_productivity_tot","CV_productivity_tot")
-MEASURE <- c("biomass_tot","productivity_tot")
+MEASURE <- c("biomass_tot","productivity_tot") #"TS_productivity_tot"

@@ -2,8 +2,8 @@
 pbinom(9, size=30, prob=.5) # On cherche k (ici k=9) tel que la probabilité d'avoir moins de k succès soit de 0.025
 qbinom(.025, size=30, prob=.5) # en fait il faut chercher dans ce sens. On cherche le 2.5ème quantile d'une binomiale avec 30 tirages et une proba de succès de 0.5
 
-for (sit in SITE){
-  table <- read.table(paste0("data/processed/productivity_tot_",sit,"_with interval.txt"),header=T)
+median_conf_int <- function(table){
+  # table is a data frame with in column :  site simul decreasing increasing random_1, etc.
   table2 <- select(table,starts_with("random")) 
   
   int_min <- c()
@@ -18,8 +18,14 @@ for (sit in SITE){
   table$int_max <- int_max
   table$mean <- median
   
-  write.table(table,paste0("data/processed/productivity_tot_",sit,"_with interval_median.txt"))
+  table
+}
+
+for (sit in SITE){
+  table <- read.table(paste0("data/processed/productivity_tot_",sit,"_with interval.txt"),header=T)
+  table3 <- median_conf_int(table)
   
+  write.table(table3,paste0("data/processed/productivity_tot_",sit,"_with interval_median.txt"))
 }
 
 

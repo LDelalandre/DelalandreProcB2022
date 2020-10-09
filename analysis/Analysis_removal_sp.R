@@ -47,7 +47,7 @@ for (site in SITE){
       } else {
         ggtitle(site,"Random order of removal of species")
       } 
-      plot + ggsave(paste0("figures/specific_biomass_",site,"_",order,".png"))
+    plot + ggsave(paste0("figures/specific_biomass_",site,"_",order,".png"))
     
   }
 }

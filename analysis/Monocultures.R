@@ -18,8 +18,10 @@ for (site in SITE){
       removal_comparison[number,3] <- sum(biomass_comp$mixture.t.ha)
     }
     
+    write.table(removal_comparison,paste0("data/processed/removal_mixt_mono_",site,"_",order,".txt"),row.names=FALSE)
+
     plot = ggplot(removal_comparison,aes(x = Nb_sp_removed))+
-      geom_line(aes(y = Monoculture_biomass, colour = "Monoculture")) + 
+      geom_line(aes(y = Monoculture_biomass, colour = "Monoculture")) +
       geom_line(aes(y = Mixture_biomass, colour = "Mixture"))+
       labs(x="Number of species removed",y="Biomass")+
       ggtitle(paste0(site,"_",order))
@@ -30,7 +32,7 @@ for (site in SITE){
 
 # Productivity
 for (site in SITE){
-  for (order in ORDER){
+  for (order in ORDER[1:2]){
     removal_comparison <- data.frame(matrix(data=c(0:29),ncol=3,nrow=30,dimnames=list(c(1:30),c("Nb_sp_removed","Monoculture_biomass","Mixture_biomass"))))
     tot <- read.table(paste0("data/processed/productivity_specific_",site,"_with monocultures.txt"),header=T)
     for (number in c(1:30)){
@@ -40,12 +42,22 @@ for (site in SITE){
       removal_comparison[number,3] <- sum(biomass_comp$mixture_t_ha)
     }
     
+    write.table(removal_comparison,paste0("data/processed/prod_removal_mixt_mono_",site,"_",order,".txt"),row.names=FALSE)
+    
+    
     plot = ggplot(removal_comparison,aes(x = Nb_sp_removed))+
       geom_line(aes(y = Monoculture_biomass, colour = "Monoculture")) + 
       geom_line(aes(y = Mixture_biomass, colour = "Mixture"))+
       labs(x="Number of species removed",y="Productivity")+
-      ggtitle(paste0(site,"_",order))
-    ggsave(filename = paste0("figures/Monocultures_",site,"/Productivity/prod_removal_mixt_mono_",site,"_",order,".png"),
+      ggtitle(paste0(site,"_",order)) +
+      scale_x_continuous(breaks = 2*c(1:15)) +
+      theme(legend.title = element_blank()) 
+    if (order=="increasing"){
+      plot <- plot + scale_color_manual(values=c("#00BFC4","green4"))
+    } else {
+      plot <- plot + scale_color_manual(values=c("#F8766D","green4"))
+    }
+    ggsave(filename = paste0("figures/Monocultures_",site,"/prod_removal_mixt_mono_",site,"_",order,".png"),
            plot=plot)
   }
 }

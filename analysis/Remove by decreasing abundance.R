@@ -96,20 +96,20 @@ site <- "GrandeDixence" # Bern ou Sion
     geom_line(aes(x=simul-1,y=abundance, color="Removing abundant species first")) +
     theme(legend.position = "bottom") +
     ggtitle(site) +
-    scale_x_continuous(breaks = 2*c(1:15)) +
-    ggsave(paste0("figures/productivity_abundance_",site,".png"))
+    scale_x_continuous(breaks = 2*c(1:15))
+    # ggsave(paste0("figures/productivity_abundance_",site,".png"))
 
   
   # petit check
   
-BernAb <- read.table("data/raw/output-cmd2_Bern_abundance.txt/forceps.Bern.site_1_productivityScene.txt")
-colnames(BernAb) <- colnames_prod
-sum(subset(BernAb,date==3949)$adultProdBiomass)
-
-for (i in c(1:30)){
-  BernDecr <- read.table(paste0("data/raw/output-cmd2_Bern_random_",i,".txt/forceps.Bern.site_1_productivityScene.txt"))
-  colnames(BernDecr) <- colnames_prod
-  print(sum(subset(BernDecr,date==3949)$adultProdBiomass))
-}
+# BernAb <- read.table("data/raw/output-cmd2_Bern_abundance.txt/forceps.Bern.site_1_productivityScene.txt")
+# colnames(BernAb) <- colnames_prod
+# sum(subset(BernAb,date==3949)$adultProdBiomass)
+# 
+# for (i in c(1:30)){
+#   BernDecr <- read.table(paste0("data/raw/output-cmd2_Bern_random_",i,".txt/forceps.Bern.site_1_productivityScene.txt"))
+#   colnames(BernDecr) <- colnames_prod
+#   print(sum(subset(BernDecr,date==3949)$adultProdBiomass))
+# }
 
 
