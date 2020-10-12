@@ -262,4 +262,27 @@ confidence_interval <- function(site,measure){
   data
 }
 
+# Median confidence interval
+# pbinom(9, size=30, prob=.5) # On cherche k (ici k=9) tel que la probabilité d'avoir moins de k succès soit de 0.025
+# qbinom(.025, size=30, prob=.5) # en fait il faut chercher dans ce sens. On cherche le 2.5ème quantile d'une binomiale avec 30 tirages et une proba de succès de 0.5
+
+median_conf_int <- function(table){
+  # table is a data frame with in column :  site simul decreasing increasing random_1, etc.
+  table2 <- select(table,starts_with("random")) 
+  
+  int_min <- c()
+  int_max <- c()
+  median <- c()
+  for(i in c(1:30)){
+    int_min <- c(int_min, table2[i,order(table2[i,])[10]  ] ) # avec k = 10
+    int_max <- c(int_max, table2[i, order(table2[i,])[21] ] ) # avec 21 = 30-10+1 = N-k+1
+    median <- c(median,median(as.numeric(table2[i,]),na.rm=T) )
+  }
+  table$int_min <- int_min
+  table$int_max <- int_max
+  table$mean <- median
+  
+  table
+}
+
 
