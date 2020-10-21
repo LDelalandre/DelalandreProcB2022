@@ -9,7 +9,10 @@ source("R/Monocultures_functions.R")
 # Biomass per species_removal experiments ####
 for (site in SITE){ # Write a table with the specific final biomasses of all sets of simulations for each site
   # NB: Takes a long time to run!!
-  BIOMASSES <- biomass_specific(site=site) 
+  BIOMASSES <- NULL
+  for (order in ORDER){
+  BIOMASSES <- rbind(BIOMASSES,biomass_specific(site=site,order=order))
+  }
   write.table(BIOMASSES,paste0("data/processed/biomass_specific_",site,".txt"),sep="\t",row.names=F)
 }
 
@@ -23,7 +26,9 @@ for (site in SITE){
 for (site in SITE){
   specific_val <- specific_biomasses(site)
   write.table(specific_val,paste0("data/processed/biomass_monoculture_",site,".txt"),row.names=F,sep="\t")
-  biomass <- biomasses(site = site,specific_val = specific_val)
+  
+  specif.biomass <- read.table(paste0("data/processed/biomass_specific_",site,".txt"),header=T)
+  biomass <- biomasses(specif.biomass=specif.biomass,specific_val = specific_val)
   write.table(biomass,paste0("data/processed/biomass_specific_",site,"_with monocultures.txt"),row.names=F,sep="\t")
 }
 
@@ -87,14 +92,39 @@ for (sit in SITE){
   }
 }
 
+# Add median confidence interval ####
+for (sit in SITE){
+  table <- read.table(paste0("data/processed/productivity_tot_",sit,"_with interval.txt"),header=T)
+  table3 <- median_conf_int(table)
+  
+  write.table(table3,paste0("data/processed/productivity_tot_",sit,"_with interval_median.txt"))
+}
 
-# Command files for removing species according to abundance ####
-# attention, ce n'est aps de ça que je me suis servi (à retirer, donc ?)
-res <- read.table(paste0("data/raw/output-cmd2_",site,"_",order,".txt/forceps.",site,".site_",number,"_complete.txt"))
-colnames(res) <- colnames_res
-temp_plot <- temporal_plot(res)
-dates <- as.numeric(max(temp_plot$date))- c(900,800,700,600,500,400,300,200,100,0) # years on which we average the biomass
-years_to_keep <- subset(temp_plot,date %in%dates)
-biomasses <- aggregate(years_to_keep$biomass, list(years_to_keep$species), mean)
-colnames(biomasses) <- c("species","biomass")
-biomasses[order(biomasses$biomass,decreasing=T),]
+
+# Temporal stability ####
+
+# Specific temporal stability
+for (site in SITE){
+  TS_prod_sp <- sd_productivity_specific(site)
+  write.table(TS_prod_sp, paste0("data/processed/TS_productivity_specific_",site,".txt"),sep="\t")
+}
+
+# Community-level temporal stability
+for (site in SITE){ 
+  TS_prod_tot <- sd_productivity_tot(site)
+  write.table(TS_prod_tot, paste0("data/processed/TS_sd_productivity_tot_",site,".txt"),sep="\t",row.names = F)
+}
+for (site in SITE){ 
+  TS_prod_tot <- read.table(paste0("data/processed/TS_sd_productivity_tot_",site,".txt"),header=T)
+  TempStab <- select(TS_prod_tot,TS,site,order,simul)
+  write.table( spread(TempStab,order,TS) , paste0("data/processed/TS_productivity_tot_",site,".txt"),sep="\t",row.names = F)
+  }
+
+# Add median confidence interval
+for (site in SITE){
+  table <- read.table(paste0("data/processed/TS_productivity_tot_",site,".txt"),header=T)
+  table3 <- median_conf_int(table)
+  
+  write.table(table3,paste0("data/processed/TS_productivity_tot_",site,"_with interval_median.txt"))
+}
+

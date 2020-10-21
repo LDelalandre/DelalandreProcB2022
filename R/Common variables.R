@@ -40,4 +40,4 @@ ORDER <- c("increasing","decreasing","random_1","random_2","random_3","random_4"
 
 # MEASURE <- c("biomass_tot","sd_biomass_tot","CV_biomass_tot",
              # "productivity_tot","sd_productivity_tot","CV_productivity_tot")
-MEASURE <- c("biomass_tot","productivity_tot") #"TS_productivity_tot"
+MEASURE <- c("biomass_tot","productivity_tot","TS_productivity_tot")

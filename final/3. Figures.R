@@ -3,6 +3,7 @@ source("R/Before simulations.R")
 library(cowplot)
 library("gridExtra")
 library(ggsignif)
+library(cowplot)
 
 # plot the final ecosystem property in each condition ####
 # more precisely, it is the averaged biomass on 10 evenly-spaced points in time during the last 1000 years.
@@ -306,4 +307,42 @@ Distinctiveness <- distinct_tot$Di
 
 table1 <- cbind(Species_name,Short_name,tr,Distinctiveness)
 write.table(table1,"paper/table1.txt",row.names=F,sep="\t")
+
+
+# Temporal stability ####
+
+measure <- "TS_productivity_tot"
+PLOT <- list()
+i <- 0
+for (site in ord_plots){
+  i <- i+1
+  # for (measure in MEASURE){
+  result <- read.table(paste0("data/processed/",measure,"_",site,"_with interval_median.txt"),header=T)
+  plot <-
+    ggplot(result,aes(x=simul-1,y=decreasing,color="Removing distinct species first")) +
+    labs(x="Number of species removed",y=measure) +
+    # geom_line(size=1)+
+    geom_ribbon(aes(ymin=int_min, ymax=int_max),fill="grey60", alpha=0.5,colour="black") +
+    geom_line(aes(x=simul-1,y=increasing, color="#8766D"),size=2) +
+    geom_line(aes(x=simul-1,y=decreasing, color="#00BFC4"),size=2) +
+    theme(legend.position = "bottom") +
+    ggtitle(site) +
+    theme(plot.title = element_text(size=24)) +
+    scale_x_continuous(breaks = 5*c(1:6)) +
+    theme(legend.title = element_blank())+
+    theme(axis.title.x=element_blank(),axis.title.y=element_blank(),legend.position = "none" ) + # virer tous les titres
+    theme(axis.text=element_text(size=20))
+  # ggsave(paste0("figures/",measure,"_",site,".png"))
+  # }
+  PLOT[[i]] <- plot
+}
+
+plot_prod_cold <- plot_grid(PLOT[[1]],PLOT[[2]],PLOT[[3]], ncol = 5, nrow = 4)
+save_plot("paper/TS_dist sp loss_cold sites.png",plot_prod_cold,base_height = 15)
+
+plot_prod_warm_wet <- plot_grid(PLOT[[9]],PLOT[[10]],PLOT[[11]], ncol = 5, nrow = 4)
+save_plot("paper/TS_dist sp loss_warm-wet sites.png",plot_prod_warm_wet,base_height = 15)
+
+plot_prod_warm_dry <- plot_grid(PLOT[[4]],PLOT[[5]],PLOT[[6]],PLOT[[7]],PLOT[[8]], ncol = 5, nrow = 4)
+save_plot("paper/TS_dist sp loss_warm-dry sites.png",plot_prod_warm_dry,base_height = 15)
 
