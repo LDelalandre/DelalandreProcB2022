@@ -50,14 +50,13 @@ richness<-function(temp_plot){
 
 
 # Biomass - species removal #####
-biomass_specific <- function(site) {
+biomass_specific <- function(site,order) {
   # 1. Takes the output of the simulations (complete files).
   # 2. Selects biomass above threshold
   # 3. Selects a subset of ten years and averages the biomass of each species on these years
   # 4. Returns data frame (e.g. specific_biomass_final_Bern.txt) whose columns are:
   # "species" "abundance"	"mixture(t/ha)"	"mixture_relative"	"site"	"order"	"simul"
   BIOMASSES <- as.data.frame(matrix(nrow=0,ncol=4,dimnames = list(NULL,c("species", "mixture(t/ha)", "mixture_relative", "simul"))))
-  for (order in ORDER){
     biomass_inc<-c()
     sd_biom_inc<-c()
     for(number in c(1:30)){
@@ -82,7 +81,6 @@ biomass_specific <- function(site) {
         BIOMASSES <- rbind(BIOMASSES,biomasses)
       }
     }
-  }
   BIOMASSES
 }  
 

@@ -8,6 +8,7 @@ source("R/Monocultures_functions.R")
 
 # Biomass per species_removal experiments ####
 for (site in SITE){ # Write a table with the specific final biomasses of all sets of simulations for each site
+  # NB: does not process data for temperature increase simulations
   # NB: Takes a long time to run!!
   BIOMASSES <- NULL
   for (order in ORDER){
@@ -74,7 +75,7 @@ write.table(TOTAL,"data/processed/specific_biom_prod_complete.txt",row.names=F)
 TOTAL <- read.table("data/processed/specific_biom_prod_complete.txt",header=T)
 for (sit in SITE){ 
   BIOMASSES_sp <- subset(TOTAL,site==sit)
-  for (measure in MEASURE){
+  for (measure in c("biomass_tot","productivity_tot")){
     if (measure=="biomass_tot"){
       BIOMASSES_tot <- aggregate(BIOMASSES_sp$mixture.t.ha.,
                                  list(site = BIOMASSES_sp$site,order = BIOMASSES_sp$order,simul = BIOMASSES_sp$simul),
@@ -86,18 +87,18 @@ for (sit in SITE){
     }
     biomass_per_order <- spread(BIOMASSES_tot,order,x)
     write.table(biomass_per_order,paste0("data/processed/",measure,"_",sit,".txt"),sep="\t",row.names=F)
-    
-    conf <- confidence_interval(sit,measure)
-    write.table(conf,paste0("data/processed/",measure,"_",sit,"_with interval.txt"),sep="\t",row.names=F)
   }
 }
 
-# Add median confidence interval ####
+# Add median confidence interval to biomass and productivity removal experiments ####
 for (sit in SITE){
-  table <- read.table(paste0("data/processed/productivity_tot_",sit,"_with interval.txt"),header=T)
-  table3 <- median_conf_int(table)
-  
-  write.table(table3,paste0("data/processed/productivity_tot_",sit,"_with interval_median.txt"))
+  for (measure in c("biomass_tot","productivity_tot")){
+    table <- read.table(paste0("data/processed/",measure,"_",sit,".txt"),header=T)
+    table3 <- median_conf_int(table)
+    
+    write.table(table3,paste0("data/processed/",measure,"_",sit,"_with interval_median.txt"))
+    
+  }
 }
 
 
