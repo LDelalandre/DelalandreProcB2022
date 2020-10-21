@@ -97,55 +97,6 @@ biomass_tot <- function(site){
   biomass_per_order
 }
 
-# sd(biomass) - removal experiments ####
-sd_biomass_specific <- function(site){
-  SIGMA <- NULL
-  for (order in ORDER){
-    for(number in c(1:30)){
-      res<-try(read.table(paste0("data/raw/output-cmd2_",site,"_",order,".txt/forceps.",site,".site_",number,"_complete.txt")),silent=T) 
-      if (class(res) != "try-error"){# sometimes, the files are empty, and it returns an error message
-        colnames(res) <- colnames_res
-        int <- temporal_plot(res)
-        temp_plot <- temporal_plot_threshold(int) # NB: if error here, don't forget to charge the package "dplyr"
-        temp_plot$biomass <- temp_plot$biomass/(1000*0.08*Nbpatches) # so that unit is t/ha
-        sigma <- aggregate(temp_plot$biomass, list(temp_plot$species), sd)
-        colnames(sigma) <- c("species","sd")
-        sigma$mean <- aggregate(temp_plot$biomass, list(temp_plot$species), mean)$x
-        sigma$CV <- sigma$sd/sigma$mean
-        sigma$site <- site
-        sigma$order <- order
-        sigma$simul <- number
-
-        SIGMA <- rbind(SIGMA,sigma)
-      }
-    }
-  }
-  SIGMA
-}
-
-sd_biomass_tot <- function(site){ # Takes a looong time
-  SIGMA <- NULL
-  for (order in ORDER){
-    for(number in c(1:30)){
-      res<-try(read.table(paste0("data/raw/output-cmd2_",site,"_",order,".txt/forceps.",site,".site_",number,"_complete.txt")),silent=T) 
-      if (class(res) != "try-error"){# sometimes, the files are empty, and it returns an error message
-        colnames(res) <- colnames_res
-        int <- temporal_plot(res)
-        temp_plot <- temporal_plot_threshold(int) # NB: if error here, don't forget to charge the package "dplyr"
-        temp_plot$biomass <- temp_plot$biomass/(1000*0.08*Nbpatches) # so that unit is t/ha
-        summed <- aggregate(temp_plot$biomass,list(temp_plot$date),sum)
-        sigma <- sd(summed$x)
-        mu <- mean(summed$x)
-        CV <- sigma/mu
-        sigma <- data.frame(sd=sigma,mean=mu,CV,site,order,simul=number)
-        
-        SIGMA <- rbind(SIGMA,sigma)
-      }
-    }
-  }
-  SIGMA
-}
-
 
 # Productivity - removal experiments ####
 productivity_specific <- function(site){
@@ -238,29 +189,7 @@ sd_productivity_tot <- function(site){
 }
 
 
-# Confidence interval ####
-confidence_interval <- function(site,measure){
-  # Computes the confidence interval on the table written by total_biomass_final
-  # measure is either "biomass" or "productivity"
-  data <- read.table(paste0("data/processed/",measure,"_",site,".txt"),header=T)
-  RAND <- select(data,ORDER[3:12])# select only the random results
-
-  int_min <- c()
-  int_max <- c()
-  mean <- c()
-  for (j in c(1:30)){
-    int_min <- c(int_min, mean(as.numeric(RAND[j,]),na.rm=TRUE) + 1.96 * sd(as.numeric(RAND[j,]),na.rm=TRUE)/sqrt(10) )
-    int_max <- c(int_max, mean(as.numeric(RAND[j,]),na.rm=TRUE) - 1.96 * sd(as.numeric(RAND[j,]),na.rm=TRUE)/sqrt(10) )
-    mean <- c(mean, mean(as.numeric(RAND[j,]),na.rm=TRUE) )
-  }
-  data$int_min <- int_min
-  data$int_max <- int_max
-  data$mean <- mean
-  
-  data
-}
-
-# Median confidence interval
+# Median confidence interval ####
 # pbinom(9, size=30, prob=.5) # On cherche k (ici k=9) tel que la probabilité d'avoir moins de k succès soit de 0.025
 # qbinom(.025, size=30, prob=.5) # en fait il faut chercher dans ce sens. On cherche le 2.5ème quantile d'une binomiale avec 30 tirages et une proba de succès de 0.5
 
