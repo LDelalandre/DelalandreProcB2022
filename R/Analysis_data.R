@@ -99,9 +99,8 @@ biomass_tot <- function(site){
 
 
 # Productivity - removal experiments ####
-productivity_specific <- function(site){
-  PROD <- NULL
-  for (order in ORDER){
+productivity_specific <- function(site,order){
+
     for(number in c(1:30)){
       prod <- try(read.table(paste0("data/raw/output-cmd2_",site,"_",order,".txt/forceps.",site,".site_",number,"_productivityScene.txt")),silent=T)
       if (class(prod) != "try-error"){# sometimes, the files are empty, and it returns an error message
@@ -120,7 +119,6 @@ productivity_specific <- function(site){
         PROD <- rbind(PROD,productivities)
       }
     }
-  }
   PROD
 }
 
@@ -138,9 +136,8 @@ productivity_total <- function(site){
 }
 
 # sd(Productivity) - removal experiments ####
-sd_productivity_specific <- function(site){
+sd_productivity_specific <- function(site,order){
   SIGMA <- NULL
-  for (order in ORDER){
     for(number in c(1:30)){
       prod <- try(read.table(paste0("data/raw/output-cmd2_",site,"_",order,".txt/forceps.",site,".site_",number,"_productivityScene.txt")),silent=T)
       if (class(prod) != "try-error"){# sometimes, the files are empty, and it returns an error message
@@ -160,13 +157,11 @@ sd_productivity_specific <- function(site){
         SIGMA <- rbind(SIGMA,sigma)
       }
     }
-  }
   SIGMA
 }
 
 sd_productivity_tot <- function(site){
   SIGMA <- NULL
-  for (order in ORDER){
     for(number in c(1:30)){
       prod <- try(read.table(paste0("data/raw/output-cmd2_",site,"_",order,".txt/forceps.",site,".site_",number,"_productivityScene.txt")),silent=T)
       if (class(prod) != "try-error"){# sometimes, the files are empty, and it returns an error message
@@ -184,7 +179,6 @@ sd_productivity_tot <- function(site){
         SIGMA <- rbind(SIGMA,sigma)
       }
     }
-  }
   SIGMA
 }
 

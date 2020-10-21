@@ -19,7 +19,10 @@ for (site in SITE){ # Write a table with the specific final biomasses of all set
 
 # Productivity per species_removal experiment ####
 for (site in SITE){
-  PROD <- productivity_specific(site)
+  PROD <- NULL
+  for (order in ORDER){
+    PROD <- rbind(PROD,productivity_specific(site=site,order=order))
+  }
   write.table(PROD,paste0("data/processed/productivity_specific_",site,".txt"),sep="\t",row.names=F)
 }
 
@@ -106,22 +109,29 @@ for (sit in SITE){
 
 # Specific temporal stability
 for (site in SITE){
-  TS_prod_sp <- sd_productivity_specific(site)
+  TS_prod_sp <- NULL
+  for (order in ORDER){
+    TS_prod_sp=rbind(TS_prod_sp,sd_productivity_specific(site=site,order=order))
+  }
   write.table(TS_prod_sp, paste0("data/processed/TS_productivity_specific_",site,".txt"),sep="\t")
 }
 
 # Community-level temporal stability
-for (site in SITE){ 
-  TS_prod_tot <- sd_productivity_tot(site)
+for (site in SITE){ # Write TS and sd
+  TS_prod_tot <- NULL
+  for (order in ORDER){
+    TS_prod_tot <- rbind(TS_prod_tot,sd_productivity_tot(site))
+  }
   write.table(TS_prod_tot, paste0("data/processed/TS_sd_productivity_tot_",site,".txt"),sep="\t",row.names = F)
 }
-for (site in SITE){ 
+
+for (site in SITE){ # Write TS in a format ready to plot (spread the data)
   TS_prod_tot <- read.table(paste0("data/processed/TS_sd_productivity_tot_",site,".txt"),header=T)
   TempStab <- select(TS_prod_tot,TS,site,order,simul)
   write.table( spread(TempStab,order,TS) , paste0("data/processed/TS_productivity_tot_",site,".txt"),sep="\t",row.names = F)
   }
 
-# Add median confidence interval
+# Add median confidence interval to temporal stability data
 for (site in SITE){
   table <- read.table(paste0("data/processed/TS_productivity_tot_",site,".txt"),header=T)
   table3 <- median_conf_int(table)
