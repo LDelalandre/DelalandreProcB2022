@@ -32,20 +32,21 @@ prod_art_mono <- function(sit){
   
   # read the simul of the monocultures for each species ranked from i onwards 
   # and compile them in the RESMONO data frame
-  dates <- 3949 - c(900,800,700,600,500,400,300,200,100,0) # keep one year every 100 years
+  
   # NB: I need it for temporal stability
   
   RESMONO <- NULL
   for (k in c(1:30)){ # k: every simulation in monoculture (so every one of the 30 species)
-    resmono <- try(read.table(paste0("data/raw/output-cmd2_",sit,"_monoculture.txt/forceps.",sit,".site_",k,"_productivityScene.txt"),header=T),silent=T)
+    resmono <- try(read.table(paste0("data/raw/output-cmd2_",sit,"_monoculture.txt/forceps.",sit,".site_",k,"_productivity.txt"),header=T),silent=T)
     if (class(resmono) != "try-error"){
-      colnames(resmono) <- colnames_prod 
+      colnames(resmono) <- colnames_prod2 
+      dates <- max(unique(resmono$date)) - c(900,800,700,600,500,400,300,200,100,0) # keep one year every 100 years
       resmono2 <- resmono %>% filter(date %in% dates)
       RESMONO <- rbind(RESMONO,resmono2)
     }
   }
-  # RESMONO <- select(RESMONO,date,speciesId,speciesShortName,age,dbh.cm.,height.m.,biomass.kg.)
-  RESMONO$totProdBiomass_t_ha <- RESMONO$adultProdBiomass_t_ha + RESMONO$saplingBiomass_t_ha
+  # RESMONO <- select(RESMONO,date,speciesId,speciesShortName,adultProdBiomass,saplingBiomass)
+  RESMONO$totProdBiomass_t_ha <- RESMONO$adultProdBiomass + RESMONO$saplingBiomass
   
   
   ART.MONO <- data.frame(matrix(0,0,45) )
@@ -53,6 +54,7 @@ prod_art_mono <- function(sit){
   ART.MONO <- select(ART.MONO,date,id,speciesId,speciesShortName,age,dbh.cm.,height.m.,biomass.kg.,site,order,simul)
   
   for (j in 31:32){ # go through every order (random 1 to 30, decreasing, and increasing)
+    # /!\ here I do it for decreasing and increasing orders only
     print("order") ; print(j)
     if (j < 31){
       set.seed(j)
@@ -70,13 +72,14 @@ prod_art_mono <- function(sit){
     for (i in c(1:30)){   # i is the number of the simulation
       print("simulation") ; print(i)
       species_kept <- ord[i:30]
-      RESMONO2 <- filter(RESMONO,speciesId %in%species_kept)
+      RESMONO2 <- filter(RESMONO,speciesId %in% species_kept)
       
       # read the results of the simul in which the species ranked before i have been removed
       res <- try(read.table(paste0("data/raw/output-cmd2_",sit,"_",orde,".txt/forceps.",sit,".site_",i,"_complete.txt"),header=T),silent=T)
       if (class(res) != "try-error"){
         colnames(res) <- colnames_res
-        res2 <- res %>% 
+        dates2 <- max(unique(res$date)) - c(900,800,700,600,500,400,300,200,100,0)
+        res2 <- res %>%
           filter(date %in% dates)
       }
       
@@ -84,8 +87,7 @@ prod_art_mono <- function(sit){
       if(nb.trees<dim(RESMONO2)[1]){
         art.mono <- sample_n(RESMONO2,size=nb.trees,replace=F) # artificial monoculture with the same nb of individuals as in the mixture
       } else {
-        art.mono <- RESMONO2 # CAREFUL: here, if there are less individuals in the pooled monocultures than
-        # in the mixture, the aggregated monoculture that I will use for the rest of the analysis will have less individuals than the mixture
+        art.mono <- sample_n(RESMONO2,size=nb.trees,replace=T) # if the pooled mono has less trees than the mixt, I sample with replacement
       }
       
       if (dim(art.mono)[1] > 0){
@@ -118,7 +120,7 @@ for (sit in SITE){
 
 for (sit in SITE){
   ART.MONO <- read.table(paste0("data/processed/Aggregated monocultures/productivity_specific_",sit,"_art mono.txt"),header=T)
-  ART.MONO$totProdBiomass_t_ha <- ART.MONO$adultProdBiomass_t_ha + ART.MONO$saplingBiomass_t_ha
+  ART.MONO$totProdBiomass_t_ha <- (ART.MONO$adultProdBiomass + ART.MONO$saplingBiomass) / 4000 # to have it in t/ha !!!
   productivities <- ART.MONO %>% 
     group_by(site,order,simul,speciesShortName) %>% 
     summarize(mixture_t_ha=mean(totProdBiomass_t_ha))
@@ -131,7 +133,7 @@ for (sit in SITE){
 }
 
 
-# plot hte result ####
+# plot the result ####
 
 graph_site <- function(prod_per_order){
   ggplot(data=prod_per_order,aes(x=simul))+
