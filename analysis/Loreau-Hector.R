@@ -8,7 +8,7 @@ source("R/Common variables.R")
 ####
 # NB: ajouter une option: relatif/absolu
 TOTAL <- read.table("data/processed/specific_biom_prod_complete.txt",header=T)
-measure <- "biomass_tot"
+measure <- "productivity_tot"
 relatif=F
 
 LH <- function(measure,relatif){
@@ -29,10 +29,11 @@ LH <- function(measure,relatif){
       data <- select(TOTAL,species, prod_mixture,prod_monoculture,site, order, simul)
       names(data)[names(data) == "prod_mixture"] <- "YOi"
       names(data)[names(data) == "prod_monoculture"] <- "Mi"
+    } else{
+      data <- select(TOTAL,species, prod_mixture_relative,prod_monoculture_relative,site, order, simul)
+      names(data)[names(data) == "prod_mixture_relative"] <- "YOi"
+      names(data)[names(data) == "prod_monoculture_relative"] <- "Mi"
     }
-    data <- select(TOTAL,species, prod_mixture_relative,prod_monoculture_relative,site, order, simul)
-    names(data)[names(data) == "prod_mixture_relative"] <- "YOi"
-    names(data)[names(data) == "prod_monoculture_relative"] <- "Mi"
   }
   
   # dat <- read.table("data/processed/specific_biom_prod_with_zeros.txt",header=T)
@@ -57,8 +58,8 @@ LH <- function(measure,relatif){
   #   mutate(Selection2=(31-simul)*(DeltaRYavg-DeltaRYi)*(Mavg-Mi))
   
   data2 <- data%>%
-    subset(Mi!=0) %>%
-    mutate(nb_sp=sum(un)) %>%
+    subset(Mi!=0) %>% # necessarily, because we divide by Mi
+    mutate(nb_sp=sum(un)) %>% # nb of species in the community (and which are present in monoculture)
     mutate(YO=sum(YOi)) %>%
     mutate(RYEi=1/nb_sp) %>%# 1/N, N being the initial nb of species. For simul 30, N=31-30=1 sp. For simul 1, N=31-1=30 sp, etc.
     mutate(RYOi=YOi/Mi) %>%
@@ -77,6 +78,7 @@ LH <- function(measure,relatif){
 }
 
 # Compute loreau-hector values for relative and absolute biomass and productivity
+# write it in a table
 for (relatif in c(T,F)){
   for (measure in MEASURE){
     data2 <- LH(measure,relatif)
@@ -90,7 +92,7 @@ for (relatif in c(T,F)){
 # sit <- "Bever"
 # orde <- ORDER[1]
 # simu <- 1
-# LH evolution with species removal within site
+# LH evolution with species removal within site ####
 for (relatif in c(T,F)){
   for (measure in MEASURE){
     data3 <- read.table(paste0("data/processed/Loreau-Hector_",measure,"_relatif=",relatif,".txt"),header=T)
@@ -105,6 +107,7 @@ for (relatif in c(T,F)){
           geom_line()+
           # geom_ribbon(aes(ymin=int_min, ymax=int_max),fill="grey60", alpha=0.5,colour="black") +
           geom_line(aes(x=simul-1,y=Cpltarity, color="Complementarity")) +
+          geom_line(aes(x=simul-1,y=DeltaY, color="Complementarity")) +
           theme(legend.position = "bottom")
         # scale_x_continuous(breaks = 2*c(1:15)) +
         
@@ -164,3 +167,49 @@ plot(within_site$DeltaY~within_site$simul,type="l")
 data3 <- summarise(data2,DeltaY=mean(DeltaY),YO=mean(YO),YE=mean(YE),Cpltarity=mean(Cpltarity),Selection=mean(Selection),Selection2=mean(Selection2))
 plot(data3$YE~data3$YO)
 abline(0,1)
+
+# DeltaY for random and non-random scenarios ####
+relatif = F
+measure = "productivity_tot"
+data3 <- read.table(paste0("data/processed/Loreau-Hector_",measure,"_relatif=",relatif,".txt"),header=T)
+
+data4 <- data3 %>% 
+  select(site,order,simul,DeltaY) %>% 
+  tidyr::spread(order,DeltaY)
+
+
+stocks <- data.frame(
+  time = as.Date('2009-01-01') + 0:9,
+  X = rnorm(10, 0, 1),
+  Y = rnorm(10, 0, 2),
+  Z = rnorm(10, 0, 4)
+)
+stocksm <- stocks %>% gather(stock, price, -time)
+stocksm %>% spread(stock, price)
+stocksm %>% spread(time, price)
+
+for (sit in SITE){
+  for (orde in ORDER[1:2]){
+    within_site <- subset(data3,site==sit & order == orde)
+        # plot(toplot$simul,toplot$Selection,type="l")
+        # lines(toplot$simul,toplot$Cpltarity,type="l",col="2")#,ylim=c(-10000,300))
+        
+        p <- ggplot(within_site,aes(x=simul-1,y=Selection,color="Selection")) +
+          labs(x="Number of species removed",y=paste("LH coefficients",measure,"relatif=",relatif)) +
+          geom_line()+
+          # geom_ribbon(aes(ymin=int_min, ymax=int_max),fill="grey60", alpha=0.5,colour="black") +
+          geom_line(aes(x=simul-1,y=Cpltarity, color="Complementarity")) +
+          geom_line(aes(x=simul-1,y=DeltaY, color="Complementarity")) +
+          theme(legend.position = "bottom")
+        # scale_x_continuous(breaks = 2*c(1:15)) +
+        
+        if (orde=="decreasing"){
+          p=p+ggtitle(paste(sit,"Removing distinct species first"))
+        } else if (orde=="increasing") {
+          p=p+ggtitle(paste(sit,"Removing distinct species last"))
+        }
+        p + ggsave(paste0("figures/Loreau-Hector/within_site_",measure,"_relatif=",relatif,"_",sit,"_",orde,".png"))
+      }
+    }
+
+
