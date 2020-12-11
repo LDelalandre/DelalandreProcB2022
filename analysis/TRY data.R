@@ -28,11 +28,42 @@ change_sp_name <- function(df2){
   select(df3,-SName)
 }
 
-bind_forceeps <- function (dist.ForCEEPS,dist.focus) { # groupe distinctiveness output of forceeps and another dataset
+bind_forceeps <- function (dist.ForCEEPS,dist.focus) { # group distinctiveness output of forceeps and another dataset
   dist.forceeps <- filter(dist.ForCEEPS,SName %in% dist.focus$SName)
   toplot <- data.frame(dist.forceeps$SName,dist.forceeps$Di,dist.focus$Di)
   colnames(toplot) <- c("SName","Di.forceeps","Di.focus")
   toplot
+}
+
+compare_Di <- function(dist.ForCEEPS,traitdata){
+  # dist.ForCEEPS is the output of comp_fct_dist, with species as row names,
+  # and colnames =  Dim.1       Dim.2        Dim.3        Dim.4       Di SName.
+  
+  # traitsdata is the data frame of the traits I want to use to compute distinctiveness,
+  # species as rownames, and traits as columns, ex: SM       SLA         H.
+  
+  # output: data framer with the distinctiveness value per species computed with the two datasets.
+  
+  # remove species with NA
+  traitdata2 <- remove.na(traitdata)
+  # Change species names to fit with ForCEEPS SName
+  traitdata3 <- change_sp_name(traitdata2)
+  # Compute functional distinctiveness
+  dist.traitdata0 <- comp_fct_dist(traitdata3)
+  # Order it in the same way as Di computed on ForCEEPS
+  dist.traitdata<- dist.traitdata0[order(match(dist.traitdata0$SName, dist.ForCEEPS$SName)),] 
+  # Compare it with ForCEEPS order
+  toplot <- bind_forceeps(dist.ForCEEPS,dist.traitdata)
+  toplot
+}
+
+plot_Di_Di <- function(toplot){
+  # toplot is the output of the compare_Di function
+  # the function plots the Di of the species computed from the two datasets used to generate toplot.
+  ggplot(toplot,aes(x=Di.forceeps,y=Di.focus,label=SName)) +
+    labs(x="Distinctiveness computed with ForCEEPS parameters",y="Distinctiveness computed with TRY, using Westoby's SLA") +
+    geom_point()+
+    geom_label()
 }
 
 # Files ####
@@ -57,63 +88,38 @@ extract2 <- extract %>%
   filter(!is.na(StdValue))   # remove lines where there is no value measured for the trait
   # mutate(TraitName = droplevels(TraitName))
 
-# Organize it such as species are in rows and mean values for their traits in columns
+# Organize it so that species are in rows and mean values for their traits in columns
 pivot.table <- with(extract2,tapply(StdValue,list(AccSpeciesName,TraitName),mean)) # I compute the mean of trait values for each species
 pivot.table <- data.frame(pivot.table)
 
-# Observations
-dim(extract2)[1]/dim(extract)[1] # I removed 97% of the original dataset!! But I still have 44183 observations
-class(extract2$StdValue) # I only have numeric traits
-Filter(function(x)!any(is.na(x)), pivot.table) # remove traits for which at least one species has no value. No trait remains!
-
 #_______________________________________
 # WESTOBY: SLA + Height + Seed Mass ####
+# NB: I include petiole in the measure of SLA (because it is photosynthetic)
 
-# Test the results with the 3 possible measures of SLA
-PVAL <- c()
-STAT <- c()
-SLAmeasures <- colnames(pivot.table)[grep("Leaf.area.per.leaf.dry.mass",colnames(pivot.table))]
+# Select the traits used in Westoby
+west <- pivot.table %>% 
+  select(c("Seed.dry.mass", starts_with("Leaf.area.per.leaf.dry.mass"), "Plant.height.vegetative") ) %>% 
+  select(c("Seed.dry.mass",
+           "Leaf.area.per.leaf.dry.mass..specific.leaf.area..SLA.or.1.LMA...petiole.included",
+           "Plant.height.vegetative")) %>%
+  rename(SLA = "Leaf.area.per.leaf.dry.mass..specific.leaf.area..SLA.or.1.LMA...petiole.included",
+         H = "Plant.height.vegetative",
+         SM = "Seed.dry.mass")
 
-for (mesSLA in SLAmeasures){
-  # Select the traits used in Westoby
-  west <- pivot.table %>% 
-    select(c("Seed.dry.mass", starts_with("Leaf.area.per.leaf.dry.mass"), "Plant.height.vegetative") ) %>% 
-    select(c("Seed.dry.mass",
-             all_of(mesSLA),
-             "Plant.height.vegetative")) %>%
-    rename(SLA = starts_with("Leaf.area.per.leaf.dry.mass..specific.leaf.area..SLA.or.1.LMA...undefined.if.petiole.is.in..or.excluded"))
-  
-  # remove species with NA
-  west2 <- remove.na(west) # RQ: it removes subspecies such as Sorbus aucuparia subsp...: lack of measurements
-  # Change species names to fit with ForCEEPS SName
-  west3 <- change_sp_name(west2)
-  # Compute functional distinctiveness
-  dist.west0 <- comp_fct_dist(west3)
-  # Order it in the same way as Di computed on ForCEEPS
-  dist.west <- dist.west0[order(match(dist.west0$SName, dist.ForCEEPS$SName)),] 
-  # Compare it with ForCEEPS order
-  toplot <- bind_forceeps(dist.ForCEEPS,dist.west)
-  
-  # Correlation test
-  cortest <- cor.test(toplot$Di.forceeps,toplot$Di.focus,method="spearman")
-  PVAL <- c(PVAL,cortest$p.value)
-  STAT <- c(STAT,cortest$estimate)
-}
-TESTScor <- data.frame(SLAmeasures,PVAL,STAT)
+# Compute Di with these traits and compare it to ForCEEPS Di computation
+toplot <- compare_Di(dist.ForCEEPS,west)
 
-TESTScor <- TESTScor %>% 
-  mutate(SLAmeasures =  purrr::map_chr(TESTScor$SLAmeasures,
-                               function(x) stringr:::str_remove(x,"Leaf.area.per.leaf.dry.mass..specific.leaf.area..SLA.or.1.LMA...")))
+# Correlation test
+cortest <- cor.test(toplot$Di.forceeps,toplot$Di.focus,method="spearman")
+nb_sp <- dim(toplot)[1]
 
-ggplot(toplot,aes(x=Di.forceeps,y=Di.focus,label=SName)) +
-  labs(x="Distinctiveness computed with ForCEEPS parameters",y="Distinctiveness computed with TRY, using Westoby's SLA") +
-  geom_point() +
-  geom_label()
+# plot
+plot_Di_Di(toplot)
 
 #____________________________________________
 # DIAZ: SM + LMA + H + SSD + LA  + Nmass ####
 
-# Test the results with the 3 (resp. 7) possible measures of SLA (resp. LA) 
+# Test the results with the 3 (resp. 7) possible measures of SLA (resp. LA) ####
 PVAL <- c() ; STAT <- c() ; SLA <- c() ; LA <- c()
 
 SLAmeasures <- colnames(pivot.table)[grep("Leaf.area.per.leaf.dry.mass",colnames(pivot.table))]
@@ -132,16 +138,7 @@ for (mesSLA in SLAmeasures){
     diaz$LMA <- purrr::map_dbl(diaz$SLA,function(x)1/x)
     diaznoSLA <- select(diaz,-SLA)
     
-    # remove species with NA
-    diaz2 <- remove.na(diaznoSLA)
-    # Change species names to fit with ForCEEPS SName
-    diaz3 <- change_sp_name(diaz2)
-    # Compute functional distinctiveness
-    dist.diaz0 <- comp_fct_dist(diaz3)
-    # Order it in the same way as Di computed on ForCEEPS
-    dist.diaz <- dist.diaz0[order(match(dist.diaz0$SName, dist.ForCEEPS$SName)),] 
-    # Compare it with ForCEEPS order
-    toplot <- bind_forceeps(dist.ForCEEPS,dist.diaz)
+    toplot <- compare_Di(dist.ForCEEPS,diaznoSLA)
     
     # Correlation test
     cortest <- cor.test(toplot$Di.forceeps,toplot$Di.focus,method="spearman")
@@ -165,57 +162,77 @@ ggplot(TESTScor,aes(PVAL))+
   geom_histogram(bins=40)+
   geom_vline(xintercept=0.05,colour="red")
 
-ggplot(toplot,aes(x=Di.forceeps,y=Di.focus,label=SName)) +
-  labs(x="Distinctiveness computed with ForCEEPS parameters",y="Distinctiveness computed with TRY, using Westoby's SLA") +
-  geom_point()+
-  geom_label()
-  geom_smooth(method=lm)
 
+# Diaz using SLA and LA measure including petiole ####
+# NB: I use Leaf.area..in.case.of.compound.leaves..leaf..petiole.included.
+# but not sure it is the measure to use. Ask Matthias?
+diaz <- pivot.table %>% 
+  select(c("Seed.dry.mass",
+           "Leaf.area.per.leaf.dry.mass..specific.leaf.area..SLA.or.1.LMA...petiole.included",
+           "Plant.height.vegetative",
+           "Stem.specific.density..SSD..or.wood.density..stem.dry.mass.per.stem.fresh.volume.",
+           "Leaf.area..in.case.of.compound.leaves..leaf..petiole.included.",
+           "Leaf.nitrogen..N..content.per.leaf.dry.mass")) 
+colnames(diaz) <- c("SM","SLA", "H", "SSD", "LA", "Nmass")
+diaz$LMA <- purrr::map_dbl(diaz$SLA,function(x)1/x)
+diaznoSLA <- select(diaz,-SLA)
 
+# Compute distinctiveness on these traits and compare it to ForCEEPS
+toplot <- compare_Di(dist.ForCEEPS,diaznoSLA)
+cortest <- cor.test(toplot$Di.forceeps,toplot$Di.focus,method="spearman")
+plot_Di_Di(toplot)
+
+# see dependency of rho value to one species (CSat)
+toplot %>% 
+  subset(SName!="CSat") %>% 
+  {cor.test(.$Di.forceeps,.$Di.focus,method="spearman")}
+
+#_________________________________
 # PRODUCTIVITE: SLA + LNC + H ####
 # "Leaf.nitrogen..N..content.per.leaf.dry.mass"
 # "Plant.height.vegetative" 
   
-  PVAL <- c() ; STAT <- c() ; SLA <- c() ; LA <- c()
-  
-  SLAmeasures <- colnames(pivot.table)[grep("Leaf.area.per.leaf.dry.mass",colnames(pivot.table))]
-  
-  for (mesSLA in SLAmeasures){
-      pro <- pivot.table %>% 
-        select(c(all_of(mesSLA),
-                 "Plant.height.vegetative",
-                 "Leaf.nitrogen..N..content.per.leaf.dry.mass")) 
-      colnames(pro) <- c("SLA", "H", "Nmass")
+pro <- pivot.table %>% 
+  select(c("Leaf.area.per.leaf.dry.mass..specific.leaf.area..SLA.or.1.LMA...petiole.included",
+            "Plant.height.vegetative",
+            "Leaf.nitrogen..N..content.per.leaf.dry.mass")) 
+colnames(pro) <- c("SLA", "H", "Nmass")
+
+# Compute distinctiveness on these traits and compare it to ForCEEPS
+toplot <- compare_Di(dist.ForCEEPS,pro)
+cortest <- cor.test(toplot$Di.forceeps,toplot$Di.focus,method="spearman")  
+dim(toplot)[1] # number of species kept
+plot_Di_Di(toplot)
       
-      # remove species with NA
-      pro2 <- remove.na(pro)
-      # Change species names to fit with ForCEEPS SName
-      pro3 <- change_sp_name(pro2)
-      # Compute functional distinctiveness
-      dist.pro0 <- comp_fct_dist(pro3)
-      # Order it in the same way as Di computed on ForCEEPS
-      dist.pro<- dist.pro0[order(match(dist.pro0$SName, dist.ForCEEPS$SName)),] 
-      # Compare it with ForCEEPS order
-      toplot <- bind_forceeps(dist.ForCEEPS,dist.pro)
-      
-      # Correlation test
-      cortest <- cor.test(toplot$Di.forceeps,toplot$Di.focus,method="spearman")
-      PVAL <- c(PVAL,cortest$p.value)
-      STAT <- c(STAT,cortest$estimate)
-      SLA <- c(SLA,mesSLA)
-      LA <- c(LA,mesLA)
-    }
-  
-  TESTScor <- data.frame(SLA,PVAL,STAT)
-  TESTScor <- TESTScor %>% 
-    mutate(SLA =  purrr::map_chr(TESTScor$SLA,
-                                 function(x) stringr:::str_remove(x,"Leaf.area.per.leaf.dry.mass..specific.leaf.area..SLA.or.1.LMA..."))) 
+
+# RESPONSE TRAITS: ELLENBERG's species environmental values ####
+ell <- pivot.table %>% 
+  select(starts_with("Species.environmental.indicator.value.according.to.Ellenberg..")) %>% 
+  select(c(contains("continentality"),
+           contains("light"), 
+           contains("moisture"),
+           contains("nitrogen"),
+           contains("pH"),
+           contains("salt"),
+           contains("temperature")))
+colnames(ell) <- c(  "continentality","light", "moisture","nitrogen","pH","salt","temperature")
+
+# Compute distinctiveness on these traits and compare it to ForCEEPS
+toplot <- compare_Di(dist.ForCEEPS,ell)
+cortest <- cor.test(toplot$Di.forceeps,toplot$Di.focus,method="spearman")  
+dim(pro3)[1] # number of species kept
+plot_Di_Di(toplot)
 
 
-# RESPONSE TRAITS to be defined ####
-
-pp <- pivot.table %>% 
-    select(!starts_with("Leaf.area.per.leaf.dry.mass")) %>% 
-    select(!starts_with("Leaf.area..in.case.of.compound.leaves"))
-    
-  
+# ELLENBERG 2 ####
+ell <- pivot.table %>% 
+  select(starts_with("Species.environmental.indicator.value.according.to.Ellenberg..")) %>% 
+  select(c(contains("light"), 
+           contains("nitrogen"),
+           contains("temperature")))
+colnames(ell) <- c(  "light", "nitrogen","temperature")
+# Compute distinctiveness on these traits and compare it to ForCEEPS
+toplot <- compare_Di(dist.ForCEEPS,ell)
+cortest <- cor.test(toplot$Di.forceeps,toplot$Di.focus,method="spearman")  
+dim(pro3)[1] # number of species kept
+plot_Di_Di(toplot)
