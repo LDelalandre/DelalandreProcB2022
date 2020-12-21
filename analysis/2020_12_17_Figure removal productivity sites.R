@@ -7,33 +7,7 @@ source("R/Common variables.R")
 source("R/Before simulations.R")
 
 # functions ####
-gg_removal <- function(){
-  # Plot of species removal expe in one site.
-  # Columns of the data frame df:  site simul decreasing increasing random_1 random_10 etc.
-  # Legend: a boolean. Display a legend or not.
-  list(
-    labs(x="Number of species removed",y=measure),
-    geom_line(aes(x=simul-1,y=increasing, color="#00BFC4"),size=2),
-    geom_line(aes(x=simul-1,y=decreasing, color="#F8766D"),size=2) ,
-    geom_ribbon(aes(ymin=int_min, ymax=int_max), alpha=0.5,fill="grey60") ,
-    geom_line(aes(x=simul-1,y=int_max, color="grey60"),size=0) ,
-    geom_line(aes(x=simul-1,y=int_min, color="grey60"),size=0) ,
-    ggtitle(site) ,
-    theme(plot.title = element_text(size=24)) ,
-    scale_x_continuous(breaks = 5*c(1:6)) ,
-    theme(legend.position = "none" ) ,
-    xlab("Number of species removed"),
-    ylab("Productivity (t/ha)"),
-    theme(axis.text=element_text(size=20)) ,
-    theme(axis.title = element_blank()),
-    scale_color_identity(name = "Order of species loss",
-                         breaks = c("#00BFC4","#F8766D","grey60"),
-                         labels = c("Common species lost first", "Distinct species lost first", "Species lost randomly"),
-                         guide = "legend")
-  ) 
-}
-
-gg_removal_small <- function(){
+gg_removal_productivity <- function(){
   # Plot of species removal expe in one site.
   # Columns of the data frame df:  site simul decreasing increasing random_1 random_10 etc.
   # Legend: a boolean. Display a legend or not.
@@ -64,26 +38,33 @@ extract_legend <- function(result){
   # Extract the legend alone, from the data frame of species removal expe
   plot <- ggplot(result,aes(x=simul-1,y=decreasing)) + 
     gg_removal() + 
-    theme(legend.position = "right")
+    theme(legend.position = "right") +
+    theme(legend.title = element_text(size=14), #change legend title font size
+          legend.text = element_text(size=10) #change legend text font size)
+          # legend.key.size = unit(1, 'cm')
+    )
+  
   leg <- ggpubr::get_legend(plot)
   ggpubr::as_ggplot(leg)
 }
 
+#_______________________________________________________________________________
+# Data ####
 
 # Extract the legend
 legend <- read.table(paste0("data/processed/productivity_tot_Bever_with interval_median.txt"),header=T) %>% 
   extract_legend()
 
-# Environmental conditions plot ####
+# Environmental conditions
 sites <- read.table("data/Site description.txt",header=T)
 
+# Sites and coordinates used hereafter
 COORD <- sites %>% 
-  # arrange(ord_plots) %>% 
   select(Site,Temp_moy,Annual_ppt) %>% 
   arrange(Temp_moy,Annual_ppt)
 
-
-# generate plots ####
+#_______________________________________________________________________________
+# generate graphs for each site ####
 measure <- "productivity_tot"
 
 PLOT <- list()
@@ -91,15 +72,15 @@ i <- 0
 for (site in COORD$Site){
   i <- i+1
   result <- read.table(paste0("data/processed/",measure,"_",site,"_with interval_median.txt"),header=T)
-  PLOT[[i]] <- ggplot(result,aes(x=simul-1,y=decreasing)) +  gg_removal_small()
+  PLOT[[i]] <- ggplot(result,aes(x=simul-1,y=decreasing)) +  gg_removal_productivity()
 }
-PLOT
 
-
+#_______________________________________________________________________________
+# Coordinates and position ####
 
 # Size of the graphs inserted in the environmental plot
 width <- 2.3 # width of the subplots on the x axis
-height <- 200
+height <- 250
 
 # Position of the graphs in the environmental plot
 # Each site belongs to a group, defined as follows:
@@ -107,23 +88,29 @@ height <- 200
 # group 2: graph at the bottom of the point
 # group 3: graph on the left of the point
 # group 4: graph on the right of the point
-group <- c(1,2,4,3,1,3,1,3,2,4,4) # group of each site
+group <- c(1,2,4,3,1,3,1,3,2,5,4) # group of each site
 
-# Environmental plot
+#_______________________________________________________________________________
+# Environmental plot ####
 environment2 <-
   ggplot(sites, aes(x=Temp_moy,y=Annual_ppt,label=Site))+
   geom_point()+
-  # geom_label()+
-  # geom_text(fontface = "bold",position=position_jitter(width=1,height=1)) +
   xlab("Average temperature (°C)")+
   ylab("Annual precipitations (mm)") +
   xlim(0,12) +
   ylim(400,1500)+
-  theme(axis.text=element_text(size=15))+
-  theme(axis.title = element_text(size=15)) +
-  theme_article()
+  theme_article(base_size=18)
 
-# Fill the environmental plot with the graphs of the sites
+# Add axes labels for one site (Bever)
+result <- read.table(paste0("data/processed/",measure,"_Bever_with interval_median.txt"),header=T)
+PLOT[[2]] <- ggplot(result,aes(x=simul-1,y=decreasing)) + 
+  gg_removal_productivity() +
+  theme(axis.title=element_text()) +
+  ggtitle("Bever")
+  
+
+#_______________________________________________________________________________
+# Insert the graphs in the environmental plot ####
 environment <- environment2
 for (i in 1:11){
   coord <- COORD[i,-1]
@@ -153,12 +140,17 @@ for (i in 1:11){
   
 }
 # Add a legend
-environment + annotation_custom(ggplotGrob(legend), 
-                                xmin = 0, xmax = 2.5, ymin = 400, ymax = 600) 
+environment_final <- environment + annotation_custom(ggplotGrob(legend), 
+                                xmin = 0, xmax = 4, ymin = 350, ymax = 600) 
+ggsave(filename = paste0("figures/",measure,"_removal.png"), 
+       plot = environment_final,
+       width = 30, 
+       height = 26,
+       units = "cm",
+       dpi = 300)
 
 
-
-
+#_______________________________________________________________________________
 # REMINDER ####
 # My plot is modular: I can display the legend or not, display the name of the axis or nor.
 # Here is the code:
