@@ -2,7 +2,7 @@ source("R/Common variables.R")
 source("R/Analysis_data_2.R")
 # ATTENTION A NE PAS ECRASER LES FICHIERS PRECEDENTS!! C'EST TRES LONG A FAIRE TOURNER
 
-# Create artificial monocultures (form = file "complete") ####
+# "Complete" artificial monocultures ####
 # done : GrandeDixence(but random1 and not random_1, etc.), BERN, Bever
 sit <- "Bern"
 
@@ -13,18 +13,18 @@ ord_decr<-distinct_tot[order(distinct_tot$Di,decreasing=TRUE),]$Id
 ord_incr<-distinct_tot[order(distinct_tot$Di,decreasing=FALSE),]$Id
 
 
+
 # read the simul of the monocultures for each species ranked from i onwards 
 # and compile them in the RESMONO data frame
-resmono <- try(read.table(paste0("data/raw/output-cmd2_",sit,"_monoculture.txt/forceps.",sit,".site_1_complete.txt"),header=T),silent=T)
-if (class(resmono) != "try-error"){
-  colnames(resmono) <- colnames_res 
-  RESMONO <- resmono %>% filter(date == 3950)
-}
-for (k in c(2:30)){ # k: every simulation in monoculture (so every one of the 30 species)
+dates <- 3950 - c(900,800,700,600,500,400,300,200,100,0) # keep one year every 100 years
+# NB: I need it for temporal stability
+
+RESMONO <- NULL
+for (k in c(1:30)){ # k: every simulation in monoculture (so every one of the 30 species)
   resmono <- try(read.table(paste0("data/raw/output-cmd2_",sit,"_monoculture.txt/forceps.",sit,".site_",k,"_complete.txt"),header=T),silent=T)
   if (class(resmono) != "try-error"){
     colnames(resmono) <- colnames_res 
-    resmono2 <- resmono %>% filter(date == 3950)
+    resmono2 <- resmono %>% filter(date %in% dates)
         RESMONO <- rbind(RESMONO,resmono2)
   }
 }
@@ -59,7 +59,7 @@ for (j in 1:32){ # go through every order (random 1 to 30, decreasing, and incre
     if (class(res) != "try-error"){
       colnames(res) <- colnames_res
       res2 <- res %>% 
-        filter(date == 3950)
+        filter(date %in% dates)
     }
 
     nb.trees <- dim(res2)[1] # number of trees in the mixture
@@ -114,9 +114,7 @@ ggplot(result,aes(x=simul-1,y=decreasing,color="Removing distinct species first"
     # theme(axis.title.x=element_blank(),axis.title.y=element_blank(),legend.position = "none" ) # virer tous les titres
     ggsave(paste0("figures/Aggregated monocultures/Biomass_",sit,".png"))
   
-      
-      
-# productivity artificial monocultures ####
+
 
 
     

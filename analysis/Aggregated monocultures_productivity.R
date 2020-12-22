@@ -120,7 +120,7 @@ for (sit in SITE){
 
 for (sit in SITE){
   ART.MONO <- read.table(paste0("data/processed/Aggregated monocultures/productivity_specific_",sit,"_art mono.txt"),header=T)
-  ART.MONO$totProdBiomass_t_ha <- (ART.MONO$adultProdBiomass + ART.MONO$saplingBiomass) / 4000 # to have it in t/ha !!!
+  ART.MONO$totProdBiomass_t_ha <- (ART.MONO$adultProdBiomass + ART.MONO$saplingBiomass) / (1000*0.08*Nbpatches) # to have it in t/ha !!!
   productivities <- ART.MONO %>% 
     group_by(site,order,simul,speciesShortName) %>% 
     summarize(mixture_t_ha=mean(totProdBiomass_t_ha))

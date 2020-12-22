@@ -1,0 +1,260 @@
+---
+title: "Dist order subset traits"
+author: "Léo Delalandre"
+output:
+  html_document: default
+  pdf_document: default
+---
+To start with, it is noteworthy that the simulations take a long time to run, so I could not run them again in so little time. Consequently, in this document, I only use distinctiveness order computed with different subset of traits or species, and correlate it to the distinctiveness order computed on 14 traits and on all the species, which is what we used in the experimental design.
+
+# Part 1: Sensibility of species distinctiveness order to the traits chosen to compute it
+```{r echo=FALSE, results='hide',message=FALSE}
+source("R/Common variables.R")
+source("R/Analysis_data.R")
+source("R/Monocultures_functions.R")
+source("R/Before simulations.R")
+library(stringr)
+```
+
+
+
+```{r echo=FALSE}
+comp_fct_dist <- function(traits){
+  traits <- select(traits,-c(Name,SName))
+  ACP1<-PCA(traits,graph=F)
+  if(dim(ACP1$ind$coord)[2]>4){
+    distACP <- ACP1$ind$coord %>% 
+    as.data.frame() %>%
+    select(Dim.1    ,   Dim.2     ,   Dim.3      ,  Dim.4) %>%
+    traits_dist() # here we compute the functional distinctiveness
+  } else {
+    distACP <- ACP1$ind$coord %>% 
+    as.data.frame() %>%
+    select(Dim.1    ,   Dim.2     ,   Dim.3) %>%
+    traits_dist() # here we compute the functional distinctiveness
+  }
+  
+  distACP$SName<-rownames(distACP)
+  
+  distinct_tot <-  distACP
+  distinct_tot
+}
+```
+
+First, I computed functional distinctiveness on all the traits that were used to design our simulations. Then, I did it on a subset of traits excluding environmental response traits. I plotted one against the other, and I also computed Spearman's rank correlation coefficient (which answers Annette's question: Is there some way to look at the data that way--rank in distinctiveness with all traits, vs with the subset?). The value given is the correlation coefficient.
+
+(The traits included for computing the second disctinctiveness index are: HMax, AMax,   G, Brow,   Ly, La,S,A1max, A2.)
+
+```{r echo=FALSE}
+traits <- read.table("data/traits of the species_complete.txt",header=T)
+row.names(traits) <- traits$SName
+
+# no envt resp traits / Di ####
+# Compute functional distinctiveness on traits not related to envt response (Annette's remark)
+traits.simulations <- select(traits,Name,SName, HMax, AMax,   G, DDMin, WiTN, WiTX, DrTol, NTol, Brow,   Ly, La,S,A1max, A2)
+dist.all.traits <- comp_fct_dist(traits.simulations)
+
+traits.not.envt <- select(traits,Name,SName, HMax, AMax,   G, Brow,   Ly, La,S,A1max, A2)
+dist.not.envt <- comp_fct_dist(traits.not.envt)
+
+# dist.all.traits[order(dist.all.traits$Di),]
+# dist.not.envt[order(dist.not.envt$Di),]
+
+# all <- dist.all.traits$Di
+# no.envt <- dist.not.envt$Di
+
+toplot <- data.frame(dist.all.traits$SName,dist.all.traits$Di,dist.not.envt$Di)
+colnames(toplot) <- c("SName","Di.all","Di.sub")
+cor(toplot$Di.all,toplot$Di.sub,method="spearman")
+
+ggplot(toplot,aes(x=Di.all,y=Di.sub,label=SName)) +
+  labs(x="Distinctiveness computed on all the traits",y="Distinctiveness computed on a subset of traits") +
+  geom_point() +
+  geom_label() 
+```
+
+The correlation between distinctiveness orders is rather high in that case : distinct species remain distinct even when we remove direct environmental response traits (drought and nitrogen tolerance, temperature response traits). (Note that the correlation is not as pretty a what I sent you: my bad, I did it too fast and there was a mistake hidden in my codes).
+
+I then followed the same procedure after having removed the allometry traits too (S,A1max,A2: diameter-height and crown size parameters). Here, the correlation coefficient decreases:
+```{r echo=FALSE}
+traits.not.envt.allometry <- select(traits,Name,SName, HMax, AMax,   G, Brow,   Ly, La)
+dist.not.envt.allometry <- comp_fct_dist(traits.not.envt.allometry)
+
+toplot <- data.frame(dist.all.traits$SName,dist.all.traits$Di,dist.not.envt.allometry$Di)
+colnames(toplot) <- c("SName","Di.all","Di.sub")
+cor(toplot$Di.all,toplot$Di.sub,method="spearman")
+
+ggplot(toplot,aes(x=Di.all,y=Di.sub,label=SName)) +
+  labs(x="Distinctiveness computed on all the traits",y="Distinctiveness computed on a subset of traits") +
+  geom_point() +
+  geom_label() 
+```
+
+Of peculiar interest is that PCem (Pinus cembra), which is one of the most productive species in cold sites, does not appear so distinct anymore. Does it mean that the distinctiveness of one of the most important species for ecosystem productivity in cold environments relies mostly on the three allometry parameters ?
+
+To test it, I compared distinctiveness computed on all the traits and all minus the three allometry parameters.
+
+```{r echo=FALSE}
+traits.not.allometry <- select(traits,Name,SName, HMax, AMax,   G, DDMin, WiTN, WiTX, DrTol, NTol, Brow,   Ly, La)
+dist.not.allometry <- comp_fct_dist(traits.not.allometry) # changer ici si je veux changer les noms
+
+toplot <- data.frame(dist.all.traits$SName,dist.all.traits$Di,dist.not.allometry$Di) # changer ici si je veux changer les noms
+colnames(toplot) <- c("SName","Di.all","Di.sub")
+cor(toplot$Di.all,toplot$Di.sub,method="spearman")
+
+ggplot(toplot,aes(x=Di.all,y=Di.sub,label=SName)) +
+  labs(x="Distinctiveness computed on all the traits",y="Distinctiveness computed on a subset of traits") +
+  geom_point() +
+  geom_label() 
+```
+
+This time, PCem remains distinct. The info about its distinctiveness seems to be conveyed by both its environmental response and allometry traits...
+
+If, on the contrary, I compute only distinctiveness on environmental response traits, here's what I get:
+```{r echo=FALSE}
+# envt resp traits / Di
+# compute functional distinctiveness  related to envt response (Annette's remark)
+traits.envt <- select(traits.simulations,Name,SName,DDMin, WiTN, WiTX, DrTol, NTol)
+dist.envt <- comp_fct_dist(traits.envt)
+
+toplot <- data.frame(dist.all.traits$SName,dist.all.traits$Di,dist.envt$Di)
+colnames(toplot) <- c("SName","Di.all","Di.sub")
+cor(toplot$Di.all,toplot$Di.sub,method="spearman")
+
+ggplot(toplot,aes(x=Di.all,y=Di.sub,label=SName)) +
+  labs(x="Distinctiveness computed on all the traits",y="Distinctiveness computed on a subset of traits") +
+  geom_point() +
+  geom_label()
+```
+
+Important species for productivity in cold environments remain distinct here (TBac, Taxus baccata and AAlb, Abies alba, get less distinct, but they were not among the most productive).
+
+# Part 2: Distinctiveness computed on the local (instead of regional) pool of species
+
+Now, I turn to the second question you asked, Annette:
+"would it also make sense to think about removing the species that are most distinctive locally?"
+
+Here is the beginning of an answer to it. What I did was: 1) I grew each species in monocultures in every site. This gave me the "local pool" of species in each site, i.e. the species that can grow there when there is no interspecific competition. 2)For each site, I computed a distinctiveness order on these species alone. 3) In each site, I correlated that order with the order of the same species calculated when distinctiveness was computed on all the species. Here again, I used Spearman's rank-order correlation coefficient (column cor_site).
+
+Note that the number of species persisting in each site is given in the right column of the table. Sites are ordered from cold (first line) to dry-warm (last line). (The cases where not enough species persisted that we mentioned during the zoom session was when we grew them in mixture, i.e. adding interspecific competition, see the end of this document).
+```{r echo=FALSE}
+# Local pool_monocultures_recompute fct distinctiveness ####
+Di <- comp_fct_dist(traits.simulations )
+cor_site <- c()
+nb_sp <- c()
+for (sit in SITE){
+  current_site <- read.table(paste0("data/processed/biomass_monoculture_",sit,".txt"),header=T)
+  sp <- as.character(subset(current_site,monoculture.t.ha.>0)$SName)
+  # if I want to do it for species that persist, and not for monocultures
+  # current_site <- read.table(paste0("data/processed/productivity_specific_",sit,".txt"),header=T)
+  # sp <- as.character(subset(current_site,mixture_t_ha>0 & order=="increasing" & simul==1)$species)
+  
+  traits3 <- subset(traits.simulations,SName %in% sp)
+  newDi <- comp_fct_dist(traits3) # compute fct dist on these remaining species
+  subDi <- subset(Di,SName %in% newDi$SName) # keep the original distinctiveness (calculated relatively to all the species) of these remaining species
+  A <- newDi[str_order(newDi$SName),] # I need the species to be in the same order to compute spearman's correlation
+  B <- subDi[str_order(subDi$SName),]
+  coefcor <- cor(A$Di,B$Di,method="spearman") # compare how distinctiveness sorts the species in the two cases
+  cor_site <- c(cor_site, coefcor)
+  nb_sp <- c(nb_sp,length(sp))
+}
+
+data.frame(SITE,cor_site,nb_sp)
+
+```
+It is true that in the cold sites, and especially Bever and Davos, the distinctiveness order is quite different, if we look at the correlation coefficient. I the other sites, the regional pool of species equals the local pool of species (defined as the species persisting in monoculture).
+
+I look at Bever, a site where the correlation coefficient is low. First, I test statistically if it differs from zero (using the cor.test function):
+
+```{r echo=FALSE}
+sit <- "Bever"
+
+# Compute was was inside the function in the previous chunk:
+current_site <- read.table(paste0("data/processed/biomass_monoculture_",sit,".txt"),header=T)
+  sp <- as.character(subset(current_site,monoculture.t.ha.>0)$SName)
+  # if I want to do it for species that persist, and not for monocultures
+  # current_site <- read.table(paste0("data/processed/productivity_specific_",sit,".txt"),header=T)
+  # sp <- as.character(subset(current_site,mixture_t_ha>0 & order=="increasing" & simul==1)$species)
+  
+  traits3 <- subset(traits.simulations,SName %in% sp)
+  newDi <- comp_fct_dist(traits3) # compute fct dist on these remaining species
+  subDi <- subset(Di,SName %in% newDi$SName) # keep the original distinctiveness (calculated relatively to all the species) of these remaining species
+  A <- newDi[str_order(newDi$SName),] # I need the species to be in the same order to compute spearman's correlation
+  B <- subDi[str_order(subDi$SName),]
+  coefcor <- cor(A$Di,B$Di,method="spearman") # compare how distinctiveness sorts the species in the two cases
+
+# pour ce qui suit, ne pas faire tourner la boucle, mais exécuter le code pour seulement un site
+cor.test(A$Di,B$Di,alternative="two.sided",method = "spearman")
+```
+
+Now I look at the abundance~distinctiveness relationship using the distinctiveness computed locally. 
+```{r echo=FALSE}
+biom <- read.table(paste0("data/processed/biomass_monoculture_",sit,".txt"),header=T)
+abdist <- data.frame(newDi$Di,newDi$SName) # see if the abundance/dist relationships holds locally (with monocultures)
+colnames(abdist) <- c("Di","SName")
+ab <- c()
+for (i in c(1:dim(abdist)[1])){
+  ab <- c(ab,biom[which(as.character(biom$SName)==as.character(abdist[i,]$SName)),]$monoculture.t.ha.)
+}
+abdist$abundance_mono <- ab
+
+ggplot(abdist, aes(x=Di,y=abundance_mono,label=SName))+
+  geom_point()+
+  geom_label()
+  
+  
+# # A Bever, la corrélation n'est que de 0.42... Donc pas super maintien de l'ordre de distinctiveness pour le pool local.
+# A1 <- A[1:floor(dim(A)[1]/2),] # see if the second half (most distinct species) still correlates or not
+# A2 <- A[(floor(dim(A)[1]/2)+1):dim(A)[1],]
+# B1 <- B[1:floor(dim(B)[1]/2),]
+# B2 <- B[(floor(dim(B)[1]/2)+1):dim(B)[1],]
+# cor(A1$Di,B1$Di,method="spearman") # 0.23
+# cor(A2$Di,B2$Di,method="spearman") # 0.81 à Bever
+# # It seems that the most distinct species' order does not change must when we compute distinctiveness on the local pool
+# # For unstressful sites, the correlation is perfect, because we keep all the species (they can all grow in monoculture)
+# # In stressful sites : either the correlation is not so nad (GrandeDixence, 0.65)
+# # or it is quite bad, but is it good for the distinct half of the species (cf. Bever, 0.4 but 0.81 for the distinct half)
+```
+
+The most abundant species are still among the most distinct. So the results seem to hold for the local pool even in a site where the distinctiveness order varies a bit (though not significantly if we refer to the correlation test).
+
+
+Finally, you said: "Though it is perhaps interesting to point that out it does seem that it is driven more by what environment distinct traits are found in and not some special position of distinct species within a community--i.e. it does not speak so much to how community assembly processes are driving diversity function relationships. 
+
+This brings me to ask would it also make sense to think about removing the species that are most distinctive locally?"
+
+One last option would be to recompute functional distinctiveness on the species that persist in mixtures containing all the species at the beginning. This is the case were really few species persist in the cold sites (the three first sites in the following table).
+
+```{r echo=FALSE}
+# Local pool_monocultures_recompute fct distinctiveness ####
+Di <- comp_fct_dist(traits.simulations )
+cor_site <- c()
+nb_sp <- c()
+for (sit in SITE){
+  current_site <- read.table(paste0("data/processed/biomass_specific_",sit,".txt"),header=T)
+  current_site <- subset(current_site,site==sit&order=="decreasing"&simul=="1")
+  sp <- as.character(subset(current_site,mixture.t.ha.>0)$species)
+  # if I want to do it for species that persist, and not for monocultures
+  # current_site <- read.table(paste0("data/processed/productivity_specific_",sit,".txt"),header=T)
+  # sp <- as.character(subset(current_site,mixture_t_ha>0 & order=="increasing" & simul==1)$species)
+  
+  traits3 <- subset(traits.simulations,SName %in% sp)
+  newDi <- comp_fct_dist(traits3) # compute fct dist on these remaining species
+  subDi <- subset(Di,SName %in% newDi$SName) # keep the original distinctiveness (calculated relatively to all the species) of these remaining species
+  A <- newDi[str_order(newDi$SName),] # I need the species to be in the same order to compute spearman's correlation
+  B <- subDi[str_order(subDi$SName),]
+  coefcor <- cor(A$Di,B$Di,method="spearman") # compare how distinctiveness sorts the species in the two cases
+  cor_site <- c(cor_site, coefcor)
+  nb_sp <- c(nb_sp,length(sp))
+}
+
+data.frame(SITE,cor_site,nb_sp)
+
+```
+
+Here, the distinctiveness order seems to be rather different in some sites (such as Adelboden, Schwerin or Cottbus) to that computed in all the sites.
+
+I could run some simulations in this sites to see what happens when locally distinct species are removed first. An I could do it with a distinctiveness index computed on all the traits, or only a subset of them. We can think about all of this if anyone managed to go through the document up to this point!
+
+
+Léo

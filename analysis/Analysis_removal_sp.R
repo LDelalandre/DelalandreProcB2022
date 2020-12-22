@@ -4,6 +4,7 @@ library(forcats) # for reordering factors
 library("dplyr")
 library("magrittr")
 source("R/Analysis_data.R")
+# Plot specific biomasses of the species at the end of the simulations.
 
 colnames_mean<-colnames(read.table("data/colnames_mean.txt",header=T)) # idem
 colnames_res<-colnames(read.table("data/colnames_res.txt", header=T))

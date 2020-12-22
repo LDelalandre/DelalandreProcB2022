@@ -1,0 +1,30 @@
+---
+title: "2020_11_20_Exploration aggregated mono"
+author: "Léo Delalandre"
+date: "20 novembre 2020"
+output: html_document
+---
+```{r}
+source("R/Common variables.R")
+```
+
+```{r}
+sit <- "Schaffhausen"
+prod.ag <- read.table(paste0("data/processed/Aggregated monocultures/productivity_tot_",sit,"_art mono.txt"),header=T)
+prod <- read.table(paste0("data/processed/productivity_tot_",sit,".txt"),header=T)
+
+
+prod.plot <- data.frame(prod$simul,prod$decreasing,prod$increasing,prod.ag$decreasing,prod.ag$increasing)
+colnames(prod.plot) <- c("simul","decreasing","increasing","ag_decreasing","ag_increasing")
+
+ggplot(data=prod.plot,aes(x=simul))+
+    geom_line(aes(y=decreasing,colour="#00BFC4"),size=2) +
+    geom_line(aes(y=ag_decreasing,colour="purple"),size=2) +
+    ggtitle(paste(sit,"Aggredated monoculture")) +
+    theme(  plot.title = element_text( size = 17, face = "bold")) +
+    theme(legend.position = "none") +
+    theme(axis.text.x = element_text(face="bold", size=22),
+          axis.text.y = element_text(face="bold", size=18))+
+    xlab(NULL) + ylab(NULL)
+```
+

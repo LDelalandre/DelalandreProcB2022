@@ -1,0 +1,56 @@
+---
+title: "2020_10_12_Increase temperature"
+author: "Léo Delalandre"
+date: "12 octobre 2020"
+output: html_document
+---
+
+
+```{r}
+source("R/Common variables.R")
+source("R/Analysis_data.R")
+source("R/Monocultures_functions.R")
+```
+
+```{r}
+site <- "GrandeDixence"
+```
+
+```{r}
+order <- "3degrees_increasing"
+
+# Biomass in mixture
+biom_per_species <- biomass_specific(site=site,order=order)
+
+# Biomass in monoculture
+specific_val <- specific_biomasses(site)
+
+# simple plot of removal experiment
+biom_per_species <- rename(biom_per_species,mixture.t.ha.='mixture(t/ha)')
+
+BIOMASSES_tot <- aggregate(biom_per_species$mixture.t.ha.,list(site = biom_per_species$site,order = biom_per_species$order,simul = biom_per_species$simul),FUN=sum)
+
+biomass_per_order <- spread(BIOMASSES_tot,order,x)
+colnames(biomass_per_order) <- c("site","simul","order")
+
+plot(biomass_per_order$simul,biomass_per_order$order)
+
+```
+
+```{r}
+order <- "3degrees_decreasing"
+
+# Biomass in mixture
+biom_per_species <- biomass_specific(site=site,order=order)
+
+# simple plot of removal experiment
+biom_per_species <- rename(biom_per_species,mixture.t.ha.='mixture(t/ha)')
+
+BIOMASSES_tot <- aggregate(biom_per_species$mixture.t.ha.,list(site = biom_per_species$site,order = biom_per_species$order,simul = biom_per_species$simul),FUN=sum)
+
+biomass_per_order <- spread(BIOMASSES_tot,order,x)
+colnames(biomass_per_order) <- c("site","simul","order")
+
+plot(biomass_per_order$simul,biomass_per_order$order)
+```
+

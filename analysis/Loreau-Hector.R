@@ -177,29 +177,19 @@ data4 <- data3 %>%
   select(site,order,simul,DeltaY) %>% 
   tidyr::spread(order,DeltaY)
 
-
-stocks <- data.frame(
-  time = as.Date('2009-01-01') + 0:9,
-  X = rnorm(10, 0, 1),
-  Y = rnorm(10, 0, 2),
-  Z = rnorm(10, 0, 4)
-)
-stocksm <- stocks %>% gather(stock, price, -time)
-stocksm %>% spread(stock, price)
-stocksm %>% spread(time, price)
-
+# plot the three measures on graphs along biodiv erosion and save the graphs
 for (sit in SITE){
   for (orde in ORDER[1:2]){
     within_site <- subset(data3,site==sit & order == orde)
         # plot(toplot$simul,toplot$Selection,type="l")
         # lines(toplot$simul,toplot$Cpltarity,type="l",col="2")#,ylim=c(-10000,300))
         
-        p <- ggplot(within_site,aes(x=simul-1,y=Selection,color="Selection")) +
+        p <- ggplot(within_site,aes(x=simul-1,y=Selection),color="green") +
           labs(x="Number of species removed",y=paste("LH coefficients",measure,"relatif=",relatif)) +
           geom_line()+
           # geom_ribbon(aes(ymin=int_min, ymax=int_max),fill="grey60", alpha=0.5,colour="black") +
-          geom_line(aes(x=simul-1,y=Cpltarity, color="Complementarity")) +
-          geom_line(aes(x=simul-1,y=DeltaY, color="Complementarity")) +
+          geom_line(aes(x=simul-1,y=Cpltarity), color="blue") +
+          geom_line(aes(x=simul-1,y=DeltaY), color="purple") +
           theme(legend.position = "bottom")
         # scale_x_continuous(breaks = 2*c(1:15)) +
         
@@ -212,4 +202,25 @@ for (sit in SITE){
       }
     }
 
+cb_palette <- c("#999999", "#E69F00", "#56B4E9", "#009E73", "#F0E442",
+                "#0072B2", "#D55E00", "#CC79A7")
+
+sit <- "Bern" ; orde <- "decreasing"
+within_site <- subset(data3,site==sit & order == orde)
+ggplot(within_site,aes(x=simul-1,y=Selection)) +
+  labs(x="Number of species removed",y=paste("LH coefficients for",measure)) +
+  geom_line(color="#E69F00") +
+  geom_line(aes(x=simul-1,y=Cpltarity), color="#56B4E9") +
+  geom_line(aes(x=simul-1,y=DeltaY), color="#CC79A7") 
+
+
+# lm ####
+head(data3)
+mod <- lme4::lmer(DeltaY~order+simul+(1|site),data=data3)
+
+mod0 <- lm(DeltaY~order+simul,data=data3)
+anova(mod,mod0)
+
+mod1 <- lme4::lmer(DeltaY~(1|site),data=data3)
+anova(mod,mod1)
 

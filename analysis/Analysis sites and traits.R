@@ -436,7 +436,8 @@ for (i in c(1:30)){
 plot(c(1:length(correlation)),correlation)
 
 # fct dist for remaining species ####
-orde <- "random_10"
+Di <- comp_fct_dist(traits)
+orde <- "decreasing"
 prod <- read.table("data/processed/productivity_specific_GrandeDixence_with monocultures.txt",header=T)
 correlation <- c()
 for (simu in c(3,5,7,9,11,13,15,17,19,21,23,25,27)){
@@ -553,6 +554,24 @@ hist(corstat,main="Bootstrap distribution of rho", xlab="Rho")
 dev.off()
 
 
+# compute functional distinctiveness on traits not related to envt response (Annette's remark) ####
+traits.simulations <- select(traits,Name,SName,S, HMax, AMax,   G, DDMin, WiTN, WiTX, DrTol, NTol, Brow,   Ly, La,A1max, A2)
+dist.all.traits <- comp_fct_dist(traits.simulations)
+
+traits.not.envt <- select(traits.simulations,Name,SName,S, HMax, AMax,   G, Brow,   Ly, La,A1max, A2)
+dist.not.envt <- comp_fct_dist(traits.not.envt)
+
+plot(dist.all.traits$Di,dist.not.envt$Di)
+abline(0,1)
+
+data.frame(dist.all.traits$SName,dist.not.envt$SName)
+cor(dist.all.traits$SName,dist.not.envt$SName)
+
+traits.simulations <- select(traits,S, HMax, AMax,   G, DDMin, WiTN, WiTX, DrTol, NTol, Brow,   Ly, La,A1max, A2)
+traits.not.envt <- select(traits.simulations,S, HMax, AMax,   G, Brow,   Ly, La,A1max, A2)
+a <- comp_dist_selected_traits(traits.simulations)
+b <- comp_dist_selected_traits(traits.not.envt)
+cor(a,b,method="spearman")
 
 # prod added to PCA on traits ####
 # I will add columns to traits 2. 

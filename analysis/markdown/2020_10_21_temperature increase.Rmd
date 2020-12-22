@@ -1,0 +1,92 @@
+---
+title: "Temperature increase"
+author: "LÃ©o Delalandre"
+date: "21 octobre 2020"
+output:
+  html_document: default
+  pdf_document: default
+---
+```{r}
+source("R/Common variables.R")
+source("R/Analysis_data.R")
+source("R/Monocultures_functions.R")
+```
+
+
+```{r}
+graph_site <- function(site){
+  PROD_sp <- NULL
+  for (order in c("3degrees_increasing","3degrees_decreasing")){
+    PROD_sp <- rbind(PROD_sp,productivity_specific(site=site,order=order))
+  }
+
+ PROD_tot <- aggregate(PROD_sp$mixture_t_ha,list(site = PROD_sp$site,order = PROD_sp$order,simul = PROD_sp$simul),FUN=sum)# sum of the productivities of the species
+  
+  prod_per_order <- spread(PROD_tot,order,x) # data frame with each order in column
+
+
+  plot <- ggplot(data=prod_per_order,aes(x=simul))+
+  geom_line(aes(y=`3degrees_decreasing`,colour="#00BFC4"),size=2) +
+  geom_line(aes(y=`3degrees_increasing`,colour="#8766D"),size=2) +
+  ggtitle(paste(site,"+ 3°C")) +
+    theme(  plot.title = element_text( size = 17, face = "bold")) +
+  theme(legend.position = "none") +
+    theme(axis.text.x = element_text(face="bold", size=14),
+          axis.text.y = element_text(face="bold", size=14))+
+    xlab(NULL) + ylab(NULL)
+  
+  # plot <- ggplot(prod_per_order,aes(x=simul-1)) +
+  # geom_line(aes(x=simul-1,y=`3degrees_decreasing`, color="Removing distinct species first"),size=2) +
+  #             
+  #   labs(x="Number of species removed",y="Productivity") +
+  #   geom_line()+
+  #   # geom_ribbon(aes(ymin=int_min, ymax=int_max),fill="grey60", alpha=0.5,colour="black") +
+  #   geom_line(aes(x=simul-1,y=`3degrees_increasing`, color="Removing distinct species last"),size=2) +
+  #   theme(legend.position = "bottom") +
+  #   ggtitle(site) +
+  #   scale_x_continuous(breaks = 5*c(1:6)) +
+  #   # ggsave(paste0("figures/",measure,"+3°C",site,".png"))+
+  #   theme(legend.title = element_blank())
+  
+  plot
+}
+
+
+
+graph_site("GrandeDixence")
+graph_site("Bever")
+graph_site("Davos")
+# graph_site("Adelboden")
+# graph_site("Bern")
+# graph_site("Huttwil")
+graph_site("Basel")
+graph_site("Cottbus")
+# graph_site("Schaffhausen")
+graph_site("Schwerin")
+graph_site("Sion")
+```
+Davos et Grande Dixence sont des sites froids. En augmentant la température, on a augmenté la productivité (le max de productivité était à 2 t/ha/an en température normale). En températures normales, on perdait de la productivité plus rapidement en enlevant les espèces distinctes en premier (courbe rouge), mais ce n'est pas le cas ici, dans le scénario à +3°C. Les espèces distinctes ne sont plus importantes quand le site n'est plus froid...
+
+
+Voyons maintenant ce qui se passe dans un site chaud et sec (Cottbus) :
+```{r}
+graph_site("Cottbus") 
+graph_site("Basel")
+```
+On perd globalement de la productivité : on partait de 2 t/ha/an en températures normales, et à +3°C, on est plutôt à 1,6 t/ha/an. Mais on n'a pas augmenté la différence entre les deux courrbes ? (à vérifier quand j'aurai fait les random).
+
+```{r}
+graph_site("Sion")
+```
+A Sion, site le plus chaud et sec, on perd la différence entre les deux courbes qu'on avait pour de plus faibles températures... Mais en même temps, la productivité à 30 espèces n'est plus qu'à 0.16 t/ha/an, contre 1,2 en températures normales : plus rien ne pousse, en fait ! (On pourrait essayer +1,5 degrés ?)
+
+```{r}
+graph_site("Basel")
+graph_site("Schwerin")
+```
+Basel est un site chaud et sec. Chelou ici: pourquoi je n'ai plus de productivité à partir de 18 espèces en moins ? Refaire la simul pour Basel !
+
+A Schwerin, on n'a pas de perte de productivité par rapport au cas à températures "normales". Je pourrais augmenter un peu plus les températures ? (Alors qu'à Sion, je perdais beeaucoup de productivité !)
+
+
+NB : je vais mettre beaucoup de temps à faire mes simul random pour avoir le scénario neutre. Les faire d'abord à Cottbus, où il y a peut-être une légère tendance. Pou Schwerin, le faire dans un scénario à +4 ou +5 °C ?

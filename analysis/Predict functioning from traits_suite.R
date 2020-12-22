@@ -4,7 +4,7 @@ mixt <- read.table("data/processed/data productivity and biomass~traits_mixture.
 
 sit <- SITE[5]
 test <- 
-  mono %>% # I work either on MONOCULTURES or MIXTURES here (choose mixt or mono)
+  mixt %>% # I work either on MONOCULTURES or MIXTURES here (choose mixt or mono)
   group_by(site) %>% 
   mutate(sum_biom=sum(biomass)) %>% 
   filter(biomass>0.001*sum_biom)
@@ -18,11 +18,15 @@ for(i in c(1:12)){
 # Predict biomass ####
 mod=lmer(log(biomass)~S +   HMax + AMax+  G  +  DDMin  +   WiTN  + DrTol    +        
            Brow + Ly +WiTX + NTol +(1|site) ,data=test) # passage de la biomasse au log améliore l'homoscédasticité et la normalité
+mod=lmer(log(biomass)~S +   HMax + AMax+  G  +  DDMin  +   WiTN  + DrTol    +        
+           Brow + Ly +WiTX + NTol +(1|site) ,data=test) # passage de la biomasse au log améliore l'homoscédasticité et la normalité
+
 
 # 1. Vérification des hypothèses
 summary(mod)
 plot(mod) # homoscédasticité et linéarité
 qqnorm(resid(mod)) # normalité des résidus
+hist(resid(mod))
 
 qqnorm(scale(resid(mod)))
 abline(a=0,b=1, col=2) #permet de tracer droite

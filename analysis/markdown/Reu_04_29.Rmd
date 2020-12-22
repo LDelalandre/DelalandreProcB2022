@@ -1,0 +1,81 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+
+
+```{r}
+data <- read.table("data/processed/specific_biom_prod_complete.txt",header=T)
+nb_sp_lost <- c(21,22)
+sim <- nb_sp_lost + 1
+sub1 <- subset(data,site=="Bever"&order=="increasing"&simul==22)
+sub2 <- subset(data,site=="Bever"&order=="increasing"&simul==23)
+```
+
+* For simul 23, we lose PAbi
+* We see that biomass_tot increases when we lose PAbi. Why?
+```{r}
+select(sub1,-c(site,order,simul))
+```
+
+* L'abondance de PAbi en mélange est un ODG au-dessus des autres. C'est quasi son abondance en monoculture.
+* Ce n'est pas le cas en monoculture (abondance ODG de BPen et AVir).
+--> Le mélange contraint peu l'abondance (nb d'individus) de PAbi, contrairement aux abondances des autres sp.
+* Biomasse du même ODG que BPen en monoculture, mais un ODG au-dessus en mélange. De plus, diminué par 2 en passant en mélange : perf similaire aux meilleurs, type PCem.
+--> Le mélange affecte peu sa biomasse également.
+
+Donc (1) c'est une espèce peu affectée par la mise en mélange (donc très compétitive sur ce site = s'en sort bien) --> Comparer à cette même espèce sur d'autres sites. Comment le systématiser ?
+
+(2) C'est, de plus, une espèce forte abondance. Elle est donc compétitive sur ce site (deuxième sens : elle restreint les autres).
+
+(3) Mais elle a une faible biomasse cumulée. Du coup, elle restreint la biomasse totale, qui peut augmenter quand on l'enlève ET qu'il reste des espèces de forte biomasse dans le mélange (ce qui n'est pas le cas dans l'ordre de retrait "decreasing")
+
+* En revanche, c'est une espèce productive en mélange, donc on ne gagne pas de la productivité quand on l'enlève.
+
+On a exactement le même patron à GrandeDixence.
+
+
+Quelques questions/remarques sur la manière de travailler :
+* On a des données très complètes. On peut les regarder dans tous les sens, de plein de façons... Un peu ce que dit E.O. Wilson : il y a moyen de se poser plein de petites questions, d'explorer, d'être créatif sans avoir besoin de gros arsenal de méthodes et techniques.
+* Par contre, ce n'est pas évident de trouver comment regarder dans toutes ces données efficacement, et de manière systématique.
+
+* Comparer PAbi dans différents sites
+```{r}
+PAbi <- subset(data,species=="PAbi"&simul==1&order=="increasing")
+select(PAbi,-c(species,order,simul,dist))
+```
+*Le comportement de PAbi est très variable selon les sites. En gros, quand il fait sec (Cottbus, Schwerin), il ne s'en sort pas bien. On dirait que c'est l'eau qui joue (en tout cas sur le graphe 2D eau et température. Quels autres paramètres peuvent jouer ? L'azote ? Regarder le graphe de Xavier).
+
+* A Adelboden, quand on enlève PAbi, alors que c'est un site où il se porte bien, on n'a pas cette augmentation de la biomasse (elle diminue même un peu). Justement, on voit dans le tableau ci-dessus que que ce n'est qu'à Bever et GrandeDixence que l'abondance en monoculture est très élevée pour une biomasse pas si grande pour cette espèce. C'est donc dans ces cas_là que son retrait a un effet positif sur la biomasse totale de la communauté.
+
+* FAIRE le graphe comme supplementary Garcia-Valdés.
+
+###############################
+
+Le 04/05/2020
+* Davos
+```{r}
+data%>%
+  subset(site=="Davos"&order=="decreasing"&simul=="8"&monoculture.t.ha.>0.01)
+```
+Ici, c'est l'épicéa qui est responsable de l'essentiel des fonctions écosystémiques, et pas le pin cembro.
+
+* Grande dixence
+```{r}
+data%>%
+  subset(site=="GrandeDixence"&order=="decreasing"&simul=="6"&monoculture.t.ha.>0.01)
+```
+
+* Corrélation entre abondance en monoculture et en mélange : 
+```{r}
+# correlation between order of abundance in mixture and monoculture.
+COR <- c()
+for (sit in SITE){
+  restr <- subset(data, site==sit& simul==1 & order=="decreasing")
+  co <- cor(restr$mixture.t.ha.,restr$monoculture.t.ha.,method="spearman")
+  COR <- c(COR,co)
+  plot(restr$mixture.t.ha.,restr$monoculture.t.ha.,main=sit)
+}
+data.frame(SITE,COR)
+```

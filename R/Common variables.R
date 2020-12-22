@@ -12,6 +12,7 @@ TOTAL <- read.table("data/processed/specific_biom_prod_complete.txt",header=T)
 colnames_mean<-colnames(read.table("data/colnames_mean.txt",header=T)) # idem
 colnames_res<-colnames(read.table("data/colnames_res.txt", header=T))
 colnames_prod <- colnames(read.table("data/colnames_productivityScene.txt",header=T))
+colnames_prod2 <- colnames(read.table("data/colnames_productivity.txt",header=T))
 
 Nbpatches <- 50
 length <- 2000
@@ -37,6 +38,8 @@ ORDER <- c("increasing","decreasing","random_1","random_2","random_3","random_4"
            "random_15","random_16","random_17","random_18","random_19","random_20",
            "random_21","random_22","random_23","random_24",
            "random_25","random_26","random_27","random_28","random_29","random_30")
+# NB: climate warming scenarios are identified by new order names, such as "3degrees_increasing", "3degrees_decreasing", etc.
+#  However, the variable ORDER does not include these orders: I process temperature increase data separately, in another code.
 
 # MEASURE <- c("biomass_tot","sd_biomass_tot","CV_biomass_tot",
              # "productivity_tot","sd_productivity_tot","CV_productivity_tot")

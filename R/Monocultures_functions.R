@@ -84,7 +84,7 @@ add_zeros <- function(site,biomasses,measure){
   data
 }
 
-biomasses <- function(site,specific_val){
+biomasses <- function(specif.biomass,specific_val){
   # returns a data frame with colnames:
   # species mixture.t.ha. mixture_relative site      order simul monoculture(t/ha) monoculture_relative       Di
   # Each species that apears is a species that is present at the end of a mixture simulation. Consequently, we don't have all the species.
@@ -92,7 +92,7 @@ biomasses <- function(site,specific_val){
   
   # Example for the variables: site="Bern" ; specific_val = specific_values(site) ; number=1 ; order="decreasing" ; Nbpatches = 10 (ou 50)
   # Number is the number of the simulation (1: we didn't remove any species, until 30: there is only one species left)
-  biomasss <- read.table(paste0("data/processed/biomass_specific_",site,".txt"),header=T)
+  biomasss <- specif.biomass
   
   biomasses <- add_zeros(site=site,biomasses=biomasss,measure="biomass_tot")
   # Add a column with absolute biomass of the same species in monoculture
@@ -125,7 +125,7 @@ biomasses <- function(site,specific_val){
 
 
 specific_productivities <- function(site){
-  # Extract the biomasse of each species in a monoculture and make a data.frame with the following columns:
+  # Extract the productivity of each species in a monoculture and make a data.frame with the following columns:
   # Di SName biomass_monoculture     sd_biom Id relative_biomass
   
   # Rq: be careful of the way the folders and files are named.

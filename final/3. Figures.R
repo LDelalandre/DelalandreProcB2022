@@ -3,7 +3,6 @@ source("R/Before simulations.R")
 library(cowplot)
 library("gridExtra")
 library(ggsignif)
-library(cowplot)
 
 # plot the final ecosystem property in each condition ####
 # more precisely, it is the averaged biomass on 10 evenly-spaced points in time during the last 1000 years.
@@ -19,7 +18,7 @@ for (site in ord_plots){
       labs(x="Number of species removed",y=measure) +
       # geom_line(size=1)+
       geom_ribbon(aes(ymin=int_min, ymax=int_max),fill="grey60", alpha=0.5,colour="black") +
-      geom_line(aes(x=simul-1,y=increasing, color="#8766D"),size=2) +
+      geom_line(aes(x=simul-1,y=increasing, color="#8766D"),size=2) +# mettre color hors de aes !!
       geom_line(aes(x=simul-1,y=decreasing, color="#00BFC4"),size=2) +
       theme(legend.position = "bottom") +
       ggtitle(site) +
@@ -292,7 +291,7 @@ plot_pca <- ggplot(data=c1,aes(x=pc1,y=pc2)) +
   # scale_colour_gradient(low = "#132B43",high = "#56B1F7" ) +
   labs(x="Dim 1 (28.8%)",y="Dim2 (22.9%)") +
   theme(axis.title=element_text(size=15),axis.text=element_text(size=12))
-ggsave ("paper/figure 1_b.png",plot=plot_pca,dpi="print",width=20,units="cm")
+ggsave ("paper/figure 1_b.png",plot=plot_pca,dpi="print",height=15,width=20,units="cm")
 
 # table 1: traits ####
 traits<-read.table("data/Traits of the species_complete.txt",header=T)

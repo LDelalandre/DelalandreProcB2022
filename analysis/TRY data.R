@@ -234,5 +234,5 @@ colnames(ell) <- c(  "light", "nitrogen","temperature")
 # Compute distinctiveness on these traits and compare it to ForCEEPS
 toplot <- compare_Di(dist.ForCEEPS,ell)
 cortest <- cor.test(toplot$Di.forceeps,toplot$Di.focus,method="spearman")  
-dim(pro3)[1] # number of species kept
+dim(toplot)[1] # number of species kept
 plot_Di_Di(toplot)
