@@ -258,3 +258,30 @@ I could run some simulations in this sites to see what happens when locally dist
 
 
 Léo
+
+
+
+Pierre's response:
+
+Hi Leo, 
+
+Thanks for these supplementary analyses that help to see clearer in your results. Sorry for my late answer. 
+To summary : 
+Part 1: Sensibility of species distinctiveness order to the traits chosen to compute it
+- species' distinctiveness is overall in general robust to the subset of trait when considering all vs non response traits
+- less robust less robust for all vs non allometric traits
+- distinctiveness of species that are important for ecosystem functioning in cold sites (Pinus cembra) is particularly affected by the removal of allometric traits
+(then, I am lost...)
+Part 2: Distinctiveness computed on the local (instead of regional) pool of species
+I am not sure to understand Table 1. Rightmost column is supposed to be the species richness of the local pool (monocultures) ? If so, there might be a problem 'cause it is not in line with Chauvet 2017 (check Figure 2), while it should be.
+Concerning the correlations, it is normal to vary when you lose almost 30% of the species the rank cannot be really comparable (maybe scaling the rank values by the total number of species)?"So the results seem to hold for the local pool even in a site where the distinctiveness order varies a bit (though not significantly if we refer to the correlation test)." 
+good news!
+
+Overall, I think doing those analyses was important as it will nourish your understanding of the results, increase the interpretability and provide a good line of thoughts for the discussion. 
+However, by deconstructing the results too much you might also lose track of your research question and complexify the study too much. I was lost myself reading your document.
+
+As it is I would keep these analyses as supplementary and focus on the writing of the paper (particularly the discussion). 
+It is just my feeling and it is up to you, though !  
+
+Let me know what you decide ! I can help you with writing the paper if needed. 
+Best, 
