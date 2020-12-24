@@ -261,7 +261,7 @@ Léo
 
 
 
-Pierre's response:
+# Pierre's response:
 
 Hi Leo, 
 
@@ -285,3 +285,28 @@ It is just my feeling and it is up to you, though !
 
 Let me know what you decide ! I can help you with writing the paper if needed. 
 Best, 
+
+# Chauvet's methods (2017)
+
+Local pool "To identify this pool, we performed
+monoculture simulations for each species, considering that a species
+was established in a site if its biomass in monoculture was
+superior to 0.01% of the summed biomass over the 30 monocultures for
+that site. Finally, using this local species pool, we performed
+mixed-forest simulations that allowed us to predict the ‘realized’
+species pool and the ‘realized species richness’ SRr."
+
+Realized pool 
+It includes only
+species that are present at the end of a mixed-forest simulation,
+considering here again that a species is present if its biomass represents
+more than 001% of the total biomass calculated across
+all species.
+
+# Morin (2011)
+
+We define realised species richness as the species richness at the end
+of the simulation. We consider that a species was present if its biomass
+represented more than 1% of total aboveground biomass. Productivity
+was obtained by averaging the yearly productivity of 10 years at a
+100-year distance.

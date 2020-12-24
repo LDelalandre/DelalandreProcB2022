@@ -1,38 +1,26 @@
 source("R/Common variables.R")
 
 specific_biomasses <- function(site){
-  # Extract the biomasse of each species in a monoculture and make a data.frame with the following columns:
-  # Di SName biomass_monoculture     sd_biom Id relative_biomass
+  # Extract the biomasse of each species in a monoculture and make a data frame with the following columns:
+  #  Di       SName      monoculture(t/ha)         Id         monoculture_relative
   
-  # Rq: be careful of the way the folders and files are named.
-  # NB: add productivity and sd(productivity) to it when I have the adequate simulations!
   biomass<-c()
   abundance <- c()
-  # sd_biom<-c()
   mean_biom <- c()
-  # CV_biom <- c()
   for(i in c(1:30)){
     mean <- read.table(paste0("data/raw/output-cmd2_",site,"_monoculture.txt/forceps.",site,".site_",i,"_mean.txt"))
     # NB it is in the good order because we made the monocultures in the order of the species Id number.
     colnames(mean)<-colnames_mean
-    # biomass averaged
+    # biomass averaged on 10 years every 100 years
     years_to_keep <- max(mean$date) - c(900,800,700,600,500,400,300,200,100,0)
-    meanbiom <- mean(subset(mean,date %in% years_to_keep)$totalBiomass.t.ha.)
-    biomass<-c(biomass,meanbiom) # average of the last years
-    meanab <- mean(subset(mean,date %in% years_to_keep)$nTrees..ha.)*Nbpatches*0.08
-    abundance <- c(abundance,meanab)
-    # sd_biom<-c(sd_biom,sd(mean$totalBiomass.t.ha.,na.rm=T)) 
-    # mean_biom <- c(mean_biom,mean(mean$totalBiomass.t.ha.,na.rm=T)) # average on the temporal series
-    # NB : I don't compute sd(biomass) on the same years as I did for the mixtures!
+    meanbiom <- mean(subset(mean,date %in% years_to_keep)$totalBiomass.t.ha.) # average of the last years
+    biomass<-c(biomass,meanbiom) 
   }
   
   # specific_values: a data frame with final biomass of each monoculture, etc. 
   specific_values <- read.table("data/raw/distinctiveness of the species.txt",header=T)
   specific_values$'monoculture(t/ha)' <- biomass
-  specific_values$abundance <- abundance
-  # specific_values$sd_biom <- sd_biom
-  specific_values$mean_biom <- mean_biom
-  # specific_values$CV_biom <- sd_biom/ mean_biom
+  # specific_values$mean_biom <- mean_biom
   specific_values$Id <- c(0:29)
   specific_values$monoculture_relative <- specific_values$'monoculture(t/ha)' / sum(specific_values$'monoculture(t/ha)')
   specific_values
