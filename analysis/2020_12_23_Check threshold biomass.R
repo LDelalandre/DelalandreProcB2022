@@ -106,36 +106,18 @@ for (sit in SITE){
 }
 
 
-ggplot(MONOCULTURES,aes(x=Di,y=monoculture.t.ha.))+
+plotcor <- ggplot(MONOCULTURES,aes(x=Di,y=monoculture.t.ha.,label=SName))+
   geom_point()+
   facet_wrap(~site)+
   geom_smooth(method=lm)+
-  ggpubr::stat_cor(method="spearman")
+  ggpubr::stat_cor(method="spearman")+
+  geom_label()
 
-
-# Productivity mixtures keep species above threshold ####
-ALL <- 
-  read.table("data/processed/biomass_specific_ALL sites.txt",header=T) %>% 
-  group_by(site,order,simul)
-
-ALL2 <- ALL %>% 
-  filter(site==sit) %>% 
-  nest()
-
-PR <- 
-  read.table(paste0("data/processed/productivity_specific_",sit,".txt"),header=T) %>% 
-  group_by(site,order,simul) 
-
-PR2 <- PR %>% 
-  nest()
-
-for (i in 1:dim(PR2)[1]){
-  datprod <- pull(PR2,data)[[i]]
-  datbiom <- pull(ALL2,data)[[i]]
-  filtered <- filter(datprod,species %in% datbiom$speciesShortName)
-  PR2$data[i] <- filtered
-}
-
-
+ggsave(filename = paste0("figures/correlation biomass_Di.png"), 
+       plot = plotcor,
+       width = 50, 
+       height = 40,
+       units = "cm",
+       dpi = 300)
 
 

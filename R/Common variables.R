@@ -19,6 +19,9 @@ length <- 2000
 yearstobejumped <- 999
 timestep <- 100
 
+threshold <- 0.001 # A species whose final biomass in a simulation is under this fraction of the total
+# biomass of the community is considered as absent from the community
+
 
 SITE <- c("GrandeDixence","Bever","Davos","Adelboden","Huttwil","Schwerin","Bern","Cottbus","Basel","Schaffhausen"
           ,"Sion")
