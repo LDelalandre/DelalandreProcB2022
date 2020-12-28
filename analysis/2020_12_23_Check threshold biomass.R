@@ -1,38 +1,34 @@
 source("R/Common variables.R")
 source("R/Analysis_data.R")
 
+# I recode properly biomass computation (simpler and easier to track errors)
+
+# Monocultures ####
 MONO <- c()
 for (sit in SITE){
   mono <- read.table(paste0("data/processed/biomass_monoculture_",sit,".txt"),header=T) %>% 
-    filter(monoculture_relative>0.01)
-  MONO <- c(MONO,dim(mono)[1])
+    filter(monoculture_relative>threshold) %>% 
+    select(-abundance) %>% 
+    mutate(site=sit)
+  MONO <- rbind(MONO,mono)
 }
-data.frame(SITE,MONO)
 
+write.table(MONO,"data/processed/biomass_mono_ALL sites.txt",sep="\t",row.names=F)
 
-
-MIXT <- c()
-for (sit in SITE){
-  mixt <- read.table(paste0("data/processed/biomass_specific_",sit,"_with monocultures.txt"),header=T) %>% 
-    filter(order=="increasing"&simul=="1") %>% 
-    filter(mixture_relative>0.0001)
-    # filter(mixture.t.ha.>0.0001*sum(mixture.t.ha.))
-  MIXT <- c(MIXT,dim(mixt)[1])
-}
-data.frame(SITE,MIXT)
-
-
-#############################
-# I recode properly biomass computation (simpler and easier to track errors)
 
 # Mixtures ####
-ALL <- NULL
-# I want the biomass of each species in a simul with all the species
-order <- "decreasing"
-number <- 1
 
-# for (site in SITE){
-  # for (order in ORDER){
+ALL <- NULL
+# Compute the biomass of each species in each site, order of removal and simulation.
+# NB: I apply a biomass threshold, under which species are considered as absent from the community.
+
+# The data frame ALL contains the list of species in each site, order and simulation,to be used for 
+# subsetting productivity data.
+
+# NB: Approximately 2 hours to run the code.
+
+for (site in SITE){
+  for (order in ORDER){
     for (number in c(1:30)){
       res<-try(read.table(paste0("data/raw/output-cmd2_",site,"_",order,".txt/forceps.",site,".site_",number,"_complete.txt")),silent=T) 
       if (class(res) != "try-error"){# sometimes, the files are empty, and it returns an error message
@@ -45,56 +41,101 @@ number <- 1
           select(date,speciesShortName,biomass.kg.) %>% 
           summarise(biom_tot=sum(biomass.kg.)) %>% # sum of the biomass per species per date
           mutate(biom_tot=biom_tot/(1000*0.08*Nbpatches)) %>% # so that the unit becomes t/ha
-          mutate(site=site,order=order,simul=number) %>% 
+          mutate(site=site,order=order,simul=number) 
+        
+        # Apply a biomass threshold and keep species whose biomass in the last year is above a given fraction (the variable "threshold")
+        # of the total biomass of the community.
+        # Filtered contains the filtered species:
+        filtered <- res2 %>% 
+          group_by(date) %>% 
+          filter(date==3950) %>% 
+          mutate(sum=sum(biom_tot)) %>% 
+          filter(biom_tot>threshold*sum)
+        
+        # Filter species in res2, and then average their biomass on 10 years every 100 years.
+        res3 <- res2 %>% 
+          filter(speciesShortName %in% filtered$speciesShortName) %>% 
           group_by(site,order,simul,speciesShortName) %>% 
           summarise(mean_biom_tot=mean(biom_tot)) # average of biomass on 10 years every 100 years
       }
-      ALL <- rbind(ALL,res2)
-    # }
-  # }
+      ALL <- rbind(ALL,res3)
+    }
+  }
 }
 
-# Measure the number of species above a threshold = Chauvet's realized species richness.
-ALL %>% 
-  filter(order==order,number==number) %>% # keep the first simul (=all species) of a given order
-  mutate(sum_biom=sum(mean_biom_tot)) %>% 
-  filter(mean_biom_tot > 0.01*sum_biom) %>% 
-  summarise(n=n()) %>% 
-  arrange(factor(site,levels=SITE))
+# write.table(ALL,"data/processed/biomass_specific_ALL sites.txt",sep="\t",row.names=F)
+
+
+# Correlation biomass~distinctiveness ####
+
+# in mono with threshold in biomass
+MONOCULTURES <- NULL
+for (sit in SITE){
+  MONOsite <- 
+    read.table("data/processed/biomass_mono_ALL sites.txt",header=T) %>% 
+    filter(site==sit)
+  
+  DIST <- 
+    read.table("data/raw/distinctiveness of the species.txt",header=T) %>% 
+    filter(SName %in% MONOsite$SName) %>% 
+    arrange(factor(SName,levels=MONOsite$SName))
+  
+  MONOsite$Di <- DIST$Di
+  
+  MONOCULTURES <- rbind(MONOCULTURES,MONOsite)
+}
+
+# in mono without threshold
+MONOCULTURES <- NULL
+for (sit in SITE){
+  MONOsite <- read.table(paste0("data/processed/biomass_monoculture_",sit,".txt"),header=T) %>% 
+    select(-abundance) %>% 
+    mutate(site=sit)
+  
+  DIST <- 
+    read.table("data/raw/distinctiveness of the species.txt",header=T) %>% 
+    filter(SName %in% MONOsite$SName) %>% 
+    arrange(factor(SName,levels=MONOsite$SName))
+  
+  MONOsite$Di <- DIST$Di
+  test <- with(MONOsite,cor.test(Di,monoculture.t.ha.,method="spearman"))
+  test$p.value
+  test$estimate
+  
+  MONOCULTURES <- rbind(MONOCULTURES,MONOsite)
+}
+
+
+ggplot(MONOCULTURES,aes(x=Di,y=monoculture.t.ha.))+
+  geom_point()+
+  facet_wrap(~site)+
+  geom_smooth(method=lm)+
+  ggpubr::stat_cor(method="spearman")
+
+
+# Productivity mixtures keep species above threshold ####
+ALL <- 
+  read.table("data/processed/biomass_specific_ALL sites.txt",header=T) %>% 
+  group_by(site,order,simul)
 
 ALL2 <- ALL %>% 
-  filter(order==order,number==number) %>% # keep the first simul (=all species) of a given order
-  mutate(sum_biom=sum(mean_biom_tot)) %>% 
-  filter(mean_biom_tot > 0.01*sum_biom)
+  filter(site==sit) %>% 
+  nest()
 
-# Compare old and new computations
-biomBeverOld <- biomass_specific("Bever","decreasing")
+PR <- 
+  read.table(paste0("data/processed/productivity_specific_",sit,".txt"),header=T) %>% 
+  group_by(site,order,simul) 
 
-ALL
+PR2 <- PR %>% 
+  nest()
 
-# Plus petite brique (un ordre seulement, avec une sous-fonction du vieux code)
-res<-try(read.table(paste0("data/raw/output-cmd2_",site,"_",order,".txt/forceps.",site,".site_",number,"_complete.txt")),silent=T) 
-colnames(res) <- colnames_res
-int <- temporal_plot(res)
+for (i in 1:dim(PR2)[1]){
+  datprod <- pull(PR2,data)[[i]]
+  datbiom <- pull(ALL2,data)[[i]]
+  filtered <- filter(datprod,species %in% datbiom$speciesShortName)
+  PR2$data[i] <- filtered
+}
 
-int2 <- int %>% 
-  group_by(species,date) %>% 
-  summarise(biom_tot=sum(biomass)) %>% 
-  summarise(mean_biom_tot=mean(biom_tot))
-int2$mean_biom_tot <- int2$mean_biom_tot/(1000*0.08*Nbpatches)
 
-ALL2 <- ALL %>% 
-  filter(site==site,order==order,simul==number) %>%  # keep the first simul (=all species) of a given order
-  arrange(factor(speciesShortName,levels=int2$species))
 
-cbind(int2,ALL2) # same columns
-
-int3 <- temporal_plot_threshold(int)
-int3$biomass <- int3$biomass/(1000*0.08*Nbpatches)
-int4 <- int3 %>% 
-  group_by(species,date) %>% 
-  summarise(biom_tot=sum(biomass)) %>% 
-  summarise(mean_biom_tot=mean(biom_tot))
-
-# Regarder sur la dernière année seulement (comme Morin 2011)
 
