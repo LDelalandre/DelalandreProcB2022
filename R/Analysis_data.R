@@ -99,9 +99,9 @@ biomass_tot <- function(site){
 
 
 # Productivity - removal experiments ####
-productivity_specific <- function(site,order){
+productivity_specific <- function(site,order,number){
     PROD <- NULL
-    for(number in c(1:30)){
+    
       prod <- try(read.table(paste0("data/raw/output-cmd2_",site,"_",order,".txt/forceps.",site,".site_",number,"_productivityScene.txt")),silent=T)
       if (class(prod) != "try-error"){# sometimes, the files are empty, and it returns an error message
         colnames(prod)<-colnames_prod
@@ -117,7 +117,7 @@ productivity_specific <- function(site,order){
         productivities$simul <- number
         productivities$mixture_relative <- productivities$mixture_t_ha/sum(productivities$mixture_t_ha)
         PROD <- rbind(PROD,productivities)
-      }
+      
     }
   PROD
 }
