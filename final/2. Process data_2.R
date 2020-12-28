@@ -6,17 +6,6 @@ source("R/Monocultures_functions.R")
 # - takes a lot of time
 # - can overwrite previous data frames
 
-# Biomass per species_removal experiments ####
-for (site in SITE){ # Write a table with the specific final biomasses of all sets of simulations for each site
-  # NB: does not process data for temperature increase simulations
-  # NB: Takes a long time to run!!
-  BIOMASSES <- NULL
-  for (order in ORDER){
-  BIOMASSES <- rbind(BIOMASSES,biomass_specific(site=site,order=order))
-  }
-  write.table(BIOMASSES,paste0("data/processed/biomass_specific_",site,".txt"),sep="\t",row.names=F)
-}
-
 # PRODUCTIVITY ####
 persist <- function(sp,persistent.sp){
   # returns true if and only if species sp is present in the vector persisten.sp
@@ -83,65 +72,8 @@ for (site in SITE){
   write.table(prod,paste0("data/processed/productivity_specific_",site,"_with monocultures.txt"),row.names=F,sep="\t")
 }
 
-# Pool all the data ####
-# First: productivity: make a real subset of the species above biomass threshold
-TOTAL <- c()
-for (site in SITE[]){
-  biom <- read.table(paste0("data/processed/biomass_specific_",site,"_with monocultures.txt"),header=T)
-  prod <- read.table(paste0("data/processed/productivity_specific_",site,"_with monocultures.txt"),header=T)
-  for (ord in as.character(unique(biom$order))){
-    sub_biomass <- subset(biom,order==ord)
-    for (nb in unique(sub_biomass$simul)){
-      sub_biom <- subset(sub_biomass,simul==nb)
-      sub_prod <- subset(prod,order==ord & simul == nb)
-      to_keep <- subset(sub_prod,species %in% sub_biom$species)
-      to_keep$monoculture_relative <- to_keep$monoculture/sum(to_keep$monoculture)
-      to_keep$mixture_relative <- to_keep$mixture_t_ha/sum(to_keep$mixture_t_ha)
-      sub_biom <- arrange(sub_biom,species)
-      to_keep <- arrange(to_keep,species) # so that I am sure that they are in the same order
-      sub_biom$prod_mixture <- to_keep$mixture_t_ha
-      sub_biom$prod_mixture_relative <- to_keep$mixture_relative
-      sub_biom$prod_monoculture <- to_keep$monoculture
-      sub_biom$prod_monoculture_relative <- to_keep$monoculture_relative
-      TOTAL <- rbind(TOTAL,sub_biom)
-    }
-  }
-}
-write.table(TOTAL,"data/processed/specific_biom_prod_complete.txt",row.names=F)
-# this is a data frame with all the biomass and productivity for all the species
-# then I need to group for all the simul, using +/- hte following functions:
-# BIOMASSES_tot <- aggregate(BIOMASSES_sp$mixture.t.ha.,list(site = BIOMASSES_sp$site,order = BIOMASSES_sp$order,simul = BIOMASSES_sp$simul),FUN=sum)# sum of the biomasses of the species
-# biomass_per_order <- spread(BIOMASSES_tot,order,x) # data frame with each order in column
 
-# Data frames to plot species removal experiments ####
-TOTAL <- read.table("data/processed/specific_biom_prod_complete.txt",header=T)
-for (sit in SITE){ 
-  BIOMASSES_sp <- subset(TOTAL,site==sit)
-  for (measure in c("biomass_tot","productivity_tot")){
-    if (measure=="biomass_tot"){
-      BIOMASSES_tot <- aggregate(BIOMASSES_sp$mixture.t.ha.,
-                                 list(site = BIOMASSES_sp$site,order = BIOMASSES_sp$order,simul = BIOMASSES_sp$simul),
-                                 FUN=sum)
-    } else {
-      BIOMASSES_tot <- aggregate(BIOMASSES_sp$prod_mixture,
-                                 list(site = BIOMASSES_sp$site,order = BIOMASSES_sp$order,simul = BIOMASSES_sp$simul),
-                                 FUN=sum)
-    }
-    biomass_per_order <- spread(BIOMASSES_tot,order,x)
-    write.table(biomass_per_order,paste0("data/processed/",measure,"_",sit,".txt"),sep="\t",row.names=F)
-  }
-}
 
-# Add median confidence interval to biomass and productivity removal experiments ####
-for (sit in SITE){
-  for (measure in c("biomass_tot","productivity_tot")){
-    table <- read.table(paste0("data/processed/",measure,"_",sit,".txt"),header=T)
-    table3 <- median_conf_int(table)
-    
-    write.table(table3,paste0("data/processed/",measure,"_",sit,"_with interval_median.txt"))
-    
-  }
-}
 
 
 # TEMPORAL STABILITY ####
