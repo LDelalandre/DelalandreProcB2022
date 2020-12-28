@@ -30,7 +30,10 @@ gg_removal_productivity <- function(){
     scale_color_identity(name = "Order of species loss",
                          breaks = c("#00BFC4","#F8766D","grey60"),
                          labels = c("Common species lost first", "Distinct species lost first", "Species lost randomly"),
-                         guide = "legend")
+                         guide = "legend"),
+    if(measure=="productivity_tot"){
+      ylim(0,3.5)
+    }
   ) 
 }
 
@@ -147,10 +150,7 @@ for (measure in c("TS_productivity_tot","productivity_tot")){
     i <- i+1
     result <- read.table(paste0("data/processed/",measure,"_",site,"_with interval_median.txt"),header=T)
     PLOT[[i]] <- ggplot(result,aes(x=simul-1,y=decreasing)) +  
-      gg_removal_productivity() +
-      if(measure=="productivity_tot"){
-        ylim(0,3.5)
-      }
+      gg_removal_productivity()
   }
   
   # Add axes labels for one site (Bever chosen here)
