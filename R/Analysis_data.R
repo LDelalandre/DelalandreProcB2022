@@ -99,30 +99,6 @@ productivity_specific <- function(site,order,number){
 }
 
 # sd(Productivity) - removal experiments ####
-sd_productivity_specific <- function(site,order){
-  SIGMA <- NULL
-    for(number in c(1:30)){
-      prod <- try(read.table(paste0("data/raw/output-cmd2_",site,"_",order,".txt/forceps.",site,".site_",number,"_productivityScene.txt")),silent=T)
-      if (class(prod) != "try-error"){# sometimes, the files are empty, and it returns an error message
-        colnames(prod)<-colnames_prod
-        prod$totProdBiomass_t_ha <- prod$adultProdBiomass_t_ha + prod$saplingBiomass_t_ha
-        dates <- as.numeric(max(prod$date))- c(900,800,700,600,500,400,300,200,100,0)
-        prod <- subset(prod,date%in%dates) # keep 10 years every 100-year
-
-        sigma <- aggregate(prod$totProdBiomass_t_ha, list(prod$speciesShortName), sd)
-        colnames(sigma) <- c("species","sd")
-        sigma$mean <- aggregate(prod$totProdBiomass_t_ha, list(prod$speciesShortName), mean)$x
-        sigma$TS <- sigma$mean/sigma$sd
-        sigma$site <- site
-        sigma$order <- order
-        sigma$simul <- number
-        
-        SIGMA <- rbind(SIGMA,sigma)
-      }
-    }
-  SIGMA
-}
-
 sd_productivity_tot <- function(site){
   # independent from sd_productivity_specific
   SIGMA <- NULL
