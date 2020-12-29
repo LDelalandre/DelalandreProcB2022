@@ -7,7 +7,7 @@ source("R/Common variables.R")
 
 ####
 # NB: ajouter une option: relatif/absolu
-TOTAL <- read.table("data/processed/specific_biom_prod_complete.txt",header=T)
+TOTAL <- read.table("mass grave/data processed 2020_28_12/specific_biom_prod_complete.txt",header=T)
 measure <- "productivity_tot"
 relatif=F
 
