@@ -160,3 +160,23 @@ Cmd_mono<-function(distinct_tot,length,yearstobejumped,timestep,site){
   }
   sink()
 }
+
+# Id of species in all the oders of removal ####
+distinct_tot <- read.table("data/raw/distinctiveness of the species.txt",header=T)
+distinct_tot$Id <- c(0:29)
+SPord <- data.frame(matrix(data = NA, nrow = 30, ncol = 0))
+SPord$incr <-distinct_tot[order(distinct_tot$Di,decreasing=FALSE),]$Id
+SPord$decr <-distinct_tot[order(distinct_tot$Di,decreasing=TRUE),]$Id
+for (j in 1:30){
+  set.seed(j)
+  SPord[j+2] <- sample(c(0:29))
+}
+colnames(SPord) <- ORDER
+write.table(SPord,"data/removal orders.txt",row.names=F)
+
+# Correspondence between species Id and species short name ####
+name_sname <- read.table("data/Traits of the species_complete.txt",header=T,sep="\t")
+name_sname <- name_sname[,c(1,2)]
+name_sname$Id <- c(0:29) 
+name_sname$SName <- as.character(name_sname$SName)
+write.table(name_sname,"data/correspondence_SName_Id.txt",row.names=F)

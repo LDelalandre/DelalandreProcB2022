@@ -86,10 +86,13 @@ for (sit in SITE){
 }
 
 # in mono without threshold
+MONO <- read.table("data/processed/biomass_mono_ALL sites.txt",header=T)
+
 MONOCULTURES <- NULL
 for (sit in SITE){
-  MONOsite <- read.table(paste0("data/processed/biomass_monoculture_",sit,".txt"),header=T) %>% 
-    select(-abundance) %>% 
+  MONOsite <- 
+    MONO %>% 
+    filter(site==sit) %>% 
     mutate(site=sit)
   
   DIST <- 
@@ -98,10 +101,6 @@ for (sit in SITE){
     arrange(factor(SName,levels=MONOsite$SName))
   
   MONOsite$Di <- DIST$Di
-  test <- with(MONOsite,cor.test(Di,monoculture.t.ha.,method="spearman"))
-  test$p.value
-  test$estimate
-  
   MONOCULTURES <- rbind(MONOCULTURES,MONOsite)
 }
 

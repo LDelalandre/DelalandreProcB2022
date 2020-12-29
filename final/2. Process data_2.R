@@ -2,19 +2,70 @@ source("R/Common variables.R")
 source("R/Analysis_data.R")
 source("R/Monocultures_functions.R")
 
-# CAREFUL not to run all the code: it includes processing data and writing tables, which:
-# - takes a lot of time
-# - can overwrite previous data frames
-
-# PRODUCTIVITY ####
 persist <- function(sp,persistent.sp){
   # returns true if and only if species sp is present in the vector persisten.sp
   any(grepl(sp,persistent.sp))
 }
+# I should use this function in the BIOMASS section: instead of filter,
+# I should add a column indicating if a species persists or not.
+# Then, when using this file later, I should filter species which persist: filter (persists==T)
 
+# CAREFUL not to run all the code: it includes processing data and writing tables, which:
+# - takes a lot of time
+# - can overwrite previous data frames
+
+
+# BIOMASS ####
+
+# NB: Approximately 2 hours to run the code in this BIOMASS section!!
+ALL <- NULL
+# Compute the biomass of each species in each site, order of removal and simulation.
+# NB: I apply a biomass threshold, under which species are considered as absent from the community.
+
+# The data frame ALL contains the list of species in each site, order and simulation,to be used for 
+# subsetting productivity data.
+
+for (site in SITE){
+  for (order in ORDER){
+    for (number in c(1:30)){
+      res<-try(read.table(paste0("data/raw/output-cmd2_",site,"_",order,".txt/forceps.",site,".site_",number,"_complete.txt")),silent=T) 
+      if (class(res) != "try-error"){# sometimes, the files are empty, and it returns an error message
+        colnames(res) <- colnames_res
+        # gives mean biomass (in t/ha) of each species on 10 years sampled every 100 years
+        # (done for one species pool (simul = 1 : all the species, simul = 30 : 1 sp remaining), for one
+        # order of removal, and in one site)
+        res2 <- res %>% 
+          group_by(date,speciesShortName) %>% 
+          select(date,speciesShortName,biomass.kg.) %>% 
+          summarise(biom_tot=sum(biomass.kg.)) %>% # sum of the biomass per species per date
+          mutate(biom_tot=biom_tot/(1000*0.08*Nbpatches)) %>% # so that the unit becomes t/ha
+          mutate(site=site,order=order,simul=number) 
+        
+        # Apply a biomass threshold and keep species whose biomass in the last year is above a given fraction (the variable "threshold")
+        # of the total biomass of the community.
+        # Filtered contains the filtered species:
+        filtered <- res2 %>% 
+          group_by(date) %>% 
+          filter(date==3950) %>% 
+          mutate(sum=sum(biom_tot)) %>% 
+          filter(biom_tot>threshold*sum)
+        
+        # Filter species in res2, and then average their biomass on 10 years every 100 years.
+        res3 <- res2 %>% 
+          filter(speciesShortName %in% filtered$speciesShortName) %>% 
+          group_by(site,order,simul,speciesShortName) %>% 
+          summarise(mean_biom_tot=mean(biom_tot)) # average of biomass on 10 years every 100 years
+      }
+      ALL <- rbind(ALL,res3)
+    }
+  }
+}
+
+# write.table(ALL,"data/processed/biomass_specific_ALL sites.txt",sep="\t",row.names=F)
+
+# PRODUCTIVITY ####
 # Specific productivity ####
-ALL <- 
-  read.table("data/processed/biomass_specific_ALL sites.txt",header=T)
+ALL <- read.table("data/processed/biomass_specific_ALL sites.txt",header=T)
 
 for (sit in SITE){
   PROD <- NULL
@@ -48,33 +99,42 @@ for (sit in SITE){
   prod[is.na(prod)] <- 0
   
   prod2 <- median_conf_int(as.data.frame(prod))
-  write.table(prod2,paste0("data/processed/",measure,"_",sit,"_with interval_median.txt"),row.names=F)
+  write.table(prod2,paste0("data/processed/productivity_tot_",sit,"_with interval_median.txt"),row.names=F)
 }
 
 # MONOCULTURES ####
-# Monocultures: biomass per species ####
-for (site in SITE){
-  # Biomass per species in monoculture
-  specific_val <- specific_biomasses(site)
-  write.table(specific_val,paste0("data/processed/biomass_monoculture_",site,".txt"),row.names=F,sep="\t")
+
+# Biomass per species ####
+# Generates a unique data frame with site, order, simul, the biomass of each species, 
+# and whether it persists or not (above threshold or not).
+MONO <- c()
+for (sit in SITE){
+  specific_val <- 
+    specific_biomasses(sit) %>% 
+    mutate(site=sit)
+  persistent_sp <- specific_val %>% 
+    filter(monoculture_relative>threshold) %>%
+    pull(SName)
   
-  # Biomass per species in mixture and monoculture in the same data frame (and including zeros)
-  specif.biomass <- read.table(paste0("data/processed/biomass_specific_",site,".txt"),header=T)
-  biomass <- biomasses(specif.biomass=specif.biomass,specific_val = specific_val)
-  write.table(biomass,paste0("data/processed/biomass_specific_",site,"_with monocultures.txt"),row.names=F,sep="\t")
+  specific_val$persists <- purrr::map_lgl(specific_val$SName,persist,persistent_sp)
+  MONO <- rbind(MONO,specific_val)
 }
 
-# Monocultures:  productivities per species ####
+write.table(MONO,"data/processed/biomass_mono_ALL sites.txt",sep="\t",row.names=F)
+
+
+# Productivity per species ####
 for (site in SITE){
+  # 1) Compute specific productivity (and TS of productivity) per site in monoculture
   specific_val <- specific_productivities(site)
   write.table(specific_val,paste0("data/processed/productivity_monoculture_",site,".txt"),row.names=F,sep="\t")
+  
+  # 2) Add a column with productivity in monoculture to the files giving productivity in mixture
+  # NB: For Loreau-Hector, it adds species that are absent, but were present in the regional pool 
+  # (and attributes them a productivity value o zero)
   prod <- productivities(site = site,specific_val = specific_val)
   write.table(prod,paste0("data/processed/productivity_specific_",site,"_with monocultures.txt"),row.names=F,sep="\t")
 }
-
-
-
-
 
 # TEMPORAL STABILITY ####
 

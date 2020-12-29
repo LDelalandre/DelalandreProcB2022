@@ -1,59 +1,23 @@
 source("R/Common variables.R")
 
-specific_biomasses <- function(site){
-  # Extract the biomasse of each species in a monoculture and make a data frame with the following columns:
-  #  Di       SName      monoculture(t/ha)         Id         monoculture_relative
-  
-  biomass<-c()
-  abundance <- c()
-  mean_biom <- c()
-  for(i in c(1:30)){
-    mean <- read.table(paste0("data/raw/output-cmd2_",site,"_monoculture.txt/forceps.",site,".site_",i,"_mean.txt"))
-    # NB it is in the good order because we made the monocultures in the order of the species Id number.
-    colnames(mean)<-colnames_mean
-    # biomass averaged on 10 years every 100 years
-    years_to_keep <- max(mean$date) - c(900,800,700,600,500,400,300,200,100,0)
-    meanbiom <- mean(subset(mean,date %in% years_to_keep)$totalBiomass.t.ha.) # average of the last years
-    biomass<-c(biomass,meanbiom) 
-  }
-  
-  # specific_values: a data frame with final biomass of each monoculture, etc. 
-  specific_values <- read.table("data/raw/distinctiveness of the species.txt",header=T)
-  specific_values$'monoculture(t/ha)' <- biomass
-  # specific_values$mean_biom <- mean_biom
-  specific_values$Id <- c(0:29)
-  specific_values$monoculture_relative <- specific_values$'monoculture(t/ha)' / sum(specific_values$'monoculture(t/ha)')
-  specific_values
-}
 
-add_zeros <- function(site,biomasses,measure){
+
+add_zeros <- function(site,productivity_specif,measure){
   sit <- site
-  # This function adds lines with species present at the beginning of a simulation but
-  # whose biomass is null a the end to the output of specific_biomasses.
+  # This function adds lines with species present at the beginning of a simulation (=regional pool) but
+  # absent in the realized pool (=in mixture)
   # Useful for the Loreau-Hector analysis.
-  data <- biomasses
+  data <- productivity_specif
   data$species <- as.character(data$species)
   data$site <- as.character(data$site)
   data$order <- as.character(data$order)
   # Include species whose biomass or productivity = 0
+  
   # First, have a data frame with the Id of species in all the oders of removal
-  distinct_tot <- read.table("data/raw/distinctiveness of the species.txt",header=T)
-  distinct_tot$Id <- c(0:29)
-  SPord <- data.frame(matrix(data = NA, nrow = 30, ncol = 0))
-  SPord$incr <-distinct_tot[order(distinct_tot$Di,decreasing=FALSE),]$Id
-  SPord$decr <-distinct_tot[order(distinct_tot$Di,decreasing=TRUE),]$Id
-  for (j in 1:30){
-    set.seed(j)
-    SPord[j+2] <- sample(c(0:29))
-  }
-  colnames(SPord) <- ORDER
+  SPord <- read.table("data/removal orders.txt",header=T)
   
   # Second, have the correspondence between species Id and species short name
-  name_sname <- read.table("data/Traits of the species_complete.txt",header=T)
-  name_sname <- name_sname[,c(1,2)]
-  name_sname[,1] <- c(0:29) 
-  colnames(name_sname) <- c("Id","SName")
-  name_sname$SName <- as.character(name_sname$SName)
+  name_sname <- read.table("data/correspondence_SName_Id.txt",header=T)
   
   # Third, add lines in the file data with 
   for (sim in c(1:30)){# all the simul
@@ -112,48 +76,16 @@ biomasses <- function(specif.biomass,specific_val){
 }
 
 
-specific_productivities <- function(site){
-  # Extract the productivity of each species in a monoculture and make a data.frame with the following columns:
-  # Di SName biomass_monoculture     sd_biom Id relative_biomass
-  
-  # Rq: be careful of the way the folders and files are named.
-  # NB: add productivity and sd(productivity) to it when I have the adequate simulations!
-  productivity<-c()
-  sd<-c()
-  mean <- c()
-  CV <- c()
-  for(number in c(1:30)){
-    prod <- try(read.table(paste0("data/raw/output-cmd2_",site,"_monoculture.txt/forceps.",site,".site_",number,"_productivityScene.txt")),silent=T)
-    if (class(prod) != "try-error"){# sometimes, the files are empty, and it returns an error message
-      colnames(prod)<-colnames_prod
-      prod$totProdBiomass_t_ha <- prod$adultProdBiomass_t_ha + prod$saplingBiomass_t_ha
-      years_to_keep <- max(prod$date) - c(900,800,700,600,500,400,300,200,100,0)
-      prod_to_keep <- subset(prod,date %in% years_to_keep)
-      meanpr <- mean(prod_to_keep$totProdBiomass_t_ha)
-      productivity<-c(productivity,meanpr)
-      sd<-c(sd,sd(prod$totProdBiomass_t_ha)) 
-      mean <- c(mean,mean(prod$totProdBiomass_t_ha))
-    }
-  }
-  
-  # specific_values: a data frame with final biomass of each monoculture, etc. 
-  specific_values <- read.table("data/raw/distinctiveness of the species.txt",header=T)
-  specific_values$monoculture <- productivity
-  specific_values$sd <- sd
-  specific_values$mean <- mean
-  specific_values$CV <- sd/mean
-  specific_values$Id <- c(0:29)
-  specific_values$monoculture_relative <- specific_values$monoculture/ sum(specific_values$monoculture)
-  specific_values
-}
 
 
 productivities <- function(site,specific_val){
+  # Adds a column with productivity in monoculture to data frames with prod in mixture
+  # and adds lines with species absent from the local pool but present in the regional (their prod is zero)
   # returns a data frame with colnames:
   # species productivity.t.ha. mixture_relative site      order simul monoculture(t/ha) monoculture_relative       Di
-  # Each species that apears is a species that is present at the end of a mixture simulation. Consequently, we don't have all the species.
+  # Each species that appears is a species that is present at the end of a mixture simulation. Consequently, we don't have all the species.
   
-  # Example for the variables: site="Bern" ; specific_val = specific_values(site) ; number=1 ; order="decreasing" ; Nbpatches = 10 (ou 50)
+  # Example for the variables: site="Bern" ; specific_val = specific_values(site)
   # Number is the number of the simulation (1: we didn't remove any species, until 30: there is only one species left)
   productivityy <- read.table(paste0("data/processed/productivity_specific_",site,".txt"),header=T)
   productivity <- add_zeros(site=site,biomasses=productivityy,measure="productivity_tot")

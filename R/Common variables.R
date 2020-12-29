@@ -6,7 +6,7 @@ library("funrar")
 library(ggplot2)
 library(tidyr)
 
-TOTAL <- read.table("data/processed/specific_biom_prod_complete.txt",header=T)
+# TOTAL <- read.table("data/processed/specific_biom_prod_complete.txt",header=T)
 
 # Variables ####
 colnames_mean<-colnames(read.table("data/colnames_mean.txt",header=T)) # idem
