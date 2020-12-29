@@ -1,8 +1,17 @@
 source("R/Common variables.R")
 
+# find if a species name is present in a vector of species names
+persist <- function(sp,persistent.sp){
+  # returns true if and only if species sp is present in the vector persistent.sp
+  any(grepl(sp,persistent.sp))
+}
+# I should use this function in the BIOMASS section (in "2. Process data_2.R"): instead of filter,
+# I should add a column indicating if a species persists or not.
+# Then, when using this file later, I should filter species which persist: filter (persists==T)
+
 # Monocultures ####
 
-specific_biomasses <- function(site){
+specific_biomasses_mono <- function(site){
   # Extract the biomasse of each species in a monoculture and make a data frame with the following columns:
   #  Di       SName      monoculture(t/ha)         Id         monoculture_relative
   
@@ -29,7 +38,7 @@ specific_biomasses <- function(site){
 }
 
 
-specific_productivities <- function(site){
+specific_productivities_mono <- function(site){
   # Extract the productivity of each species in a monoculture and make a data.frame with the following columns:
   # Di SName biomass_monoculture     sd_biom Id relative_biomass
   
@@ -63,7 +72,6 @@ specific_productivities <- function(site){
   specific_values$monoculture_relative <- specific_values$monoculture/ sum(specific_values$monoculture)
   specific_values
 }
-
 
 
 # Productivity - removal experiments ####

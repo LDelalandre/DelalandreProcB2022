@@ -2,14 +2,6 @@ source("R/Common variables.R")
 source("R/Analysis_data.R")
 source("R/Monocultures_functions.R")
 
-persist <- function(sp,persistent.sp){
-  # returns true if and only if species sp is present in the vector persisten.sp
-  any(grepl(sp,persistent.sp))
-}
-# I should use this function in the BIOMASS section: instead of filter,
-# I should add a column indicating if a species persists or not.
-# Then, when using this file later, I should filter species which persist: filter (persists==T)
-
 # CAREFUL not to run all the code: it includes processing data and writing tables, which:
 # - takes a lot of time
 # - can overwrite previous data frames
@@ -19,8 +11,8 @@ persist <- function(sp,persistent.sp){
 
 # NB: Approximately 2 hours to run the code in this BIOMASS section!!
 ALL <- NULL
-# Compute the biomass of each species in each site, order of removal and simulation.
-# NB: I apply a biomass threshold, under which species are considered as absent from the community.
+# Compute the biomass of each "persistent" species in each site, order of removal and simulation.
+# NB: To define "persistent": I apply a biomass threshold, under which species are considered as absent from the community.
 
 # The data frame ALL contains the list of species in each site, order and simulation,to be used for 
 # subsetting productivity data.
@@ -66,6 +58,7 @@ for (site in SITE){
 # PRODUCTIVITY ####
 # Specific productivity ####
 ALL <- read.table("data/processed/biomass_specific_ALL sites.txt",header=T)
+# NB: biomass of PERSISTENT species in all sites
 
 for (sit in SITE){
   PROD <- NULL
@@ -110,7 +103,7 @@ for (sit in SITE){
 MONO <- c()
 for (sit in SITE){
   specific_val <- 
-    specific_biomasses(sit) %>% 
+    specific_biomasses_mono(sit) %>% 
     mutate(site=sit)
   persistent_sp <- specific_val %>% 
     filter(monoculture_relative>threshold) %>%
@@ -124,17 +117,29 @@ write.table(MONO,"data/processed/biomass_mono_ALL sites.txt",sep="\t",row.names=
 
 
 # Productivity per species ####
-for (site in SITE){
-  # 1) Compute specific productivity (and TS of productivity) per site in monoculture
-  specific_val <- specific_productivities(site)
-  write.table(specific_val,paste0("data/processed/productivity_monoculture_",site,".txt"),row.names=F,sep="\t")
+
+# Filter species above biomass threshold
+ALL_mono <- 
+  read.table("data/processed/biomass_mono_ALL sites.txt",header=T) %>% 
+  filter(persists==T) 
+PROD_mono <- NULL
+
+for (sit in SITE){
+  # Vector of species above biomass threshold
+  persistent.sp <- ALL_mono %>% 
+    filter(site==sit) %>% 
+    pull(SName)
   
-  # 2) Add a column with productivity in monoculture to the files giving productivity in mixture
-  # NB: For Loreau-Hector, it adds species that are absent, but were present in the regional pool 
-  # (and attributes them a productivity value o zero)
-  prod <- productivities(site = site,specific_val = specific_val)
-  write.table(prod,paste0("data/processed/productivity_specific_",site,"_with monocultures.txt"),row.names=F,sep="\t")
+  # Compute productivity per species
+  prod_mono <- specific_productivities_mono(sit)
+  prod_mono$site <- sit
+  
+  # Add a column indicating if the given species persists
+  prod_mono$persists <- purrr::map_lgl(prod_mono$SName,persist,persistent.sp)
+  
+  PROD_mono <- rbind(PROD_mono,prod_mono)
 }
+write.table(PROD_mono,paste0("data/processed/productivity_monoculture_ALL sites.txt"),row.names=F,sep="\t")
 
 # TEMPORAL STABILITY ####
 
