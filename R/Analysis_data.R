@@ -99,27 +99,29 @@ productivity_specific <- function(site,order,number){
 }
 
 # sd(Productivity) - removal experiments ####
-sd_productivity_tot <- function(site){
-  # independent from sd_productivity_specific
-  SIGMA <- NULL
-    for(number in c(1:30)){
-      prod <- try(read.table(paste0("data/raw/output-cmd2_",site,"_",order,".txt/forceps.",site,".site_",number,"_productivityScene.txt")),silent=T)
-      if (class(prod) != "try-error"){# sometimes, the files are empty, and it returns an error message
-        colnames(prod)<-colnames_prod
-        prod$totProdBiomass_t_ha <- prod$adultProdBiomass_t_ha + prod$saplingBiomass_t_ha
-        dates <- as.numeric(max(prod$date))- c(900,800,700,600,500,400,300,200,100,0)
-        prod <- subset(prod,date%in%dates) # keep 10 years every 100-year
-        
-        summed <- aggregate(prod$totProdBiomass_t_ha, list(prod$date), sum)
-        sigma <- sd(summed$x)
-        mu <- mean(summed$x)
-        TS <- mu/sigma
-        sigma <- data.frame(sd=sigma,mean=mu,TS,site,order,simul=number)
-        
-        SIGMA <- rbind(SIGMA,sigma)
-      }
-    }
-  SIGMA
+sd_productivity_tot <- function(sit,orde,number,persistent.sp,filter){
+  # persistent_sp: a vector of Short Names of species belonging to the realized pool
+  # fliter: a boolean. If true, we keep only these species
+  sigma <- NULL
+  prod <- try(read.table(paste0("data/raw/output-cmd2_",sit,"_",orde,".txt/forceps.",sit,".site_",number,"_productivityScene.txt")),silent=T)
+  if (class(prod) != "try-error"){# sometimes, the files are empty, and it returns an error message
+    colnames(prod)<-colnames_prod
+    dates <- as.numeric(max(prod$date))- c(900,800,700,600,500,400,300,200,100,0)
+    
+    summed <- prod %>% 
+      mutate(totProdBiomass_t_ha = adultProdBiomass_t_ha + saplingBiomass_t_ha) %>% 
+      filter(date %in% dates) %>%
+      group_by(date) %>% 
+      {if (filter) filter(.,speciesShortName %in% persistent.sp) else .} %>% # filter the species from the realized pool or not
+      summarise(summed=sum(totProdBiomass_t_ha)) # Sum biomass of all the species species every year
+
+    sd <- sd(summed$summed)
+    mu <- mean(summed$summed)
+    TS <- mu/sd
+    sigma <- data.frame(sd=sd,mean=mu,TS,site=sit,order=orde,simul=number)
+  }
+  sigma
+
 }
 
 

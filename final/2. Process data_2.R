@@ -137,6 +137,7 @@ for (sit in SITE){
 }
 
 # Community-level productivity ####
+PROD <- NULL
 for (sit in SITE){
   prod <- 
     read.table(paste0("data/processed/productivity_specific_",sit,".txt"),header=T) %>% 
@@ -147,32 +148,47 @@ for (sit in SITE){
   prod[is.na(prod)] <- 0
   
   prod2 <- median_conf_int(as.data.frame(prod))
-  write.table(prod2,paste0("data/processed/productivity_tot_",sit,"_with interval_median.txt"),row.names=F)
+  PROD <- rbind(PROD,prod2)
 }
+write.table(PROD,paste0("data/processed/productivity_tot_with interval_median.txt"),row.names=F)
 
 
 # TEMPORAL STABILITY MIXTURES ####
 
 # Community-level temporal stability ####
-for (site in SITE){ # Write TS and sd
-  TS_prod_tot <- NULL
-  for (order in ORDER){
-    TS_prod_tot <- rbind(TS_prod_tot,sd_productivity_tot(site))
+filter <- TRUE # chose that species under biomass threshold are filtered out
+
+# Compute temporal stability in every condition
+TS_prod_tot <- NULL
+for (sit in SITE){ # Write TS and sd
+  for (orde in ORDER){
+    for (number in c(1:30)){
+      persistent.sp <- 
+        ALL %>% 
+        filter(site==sit & order==orde & simul==number) %>% 
+        pull(speciesShortName)
+      TS_prod_tot <- rbind(TS_prod_tot,sd_productivity_tot(sit,orde,number,persistent.sp,filter))
+      }
   }
-  write.table(TS_prod_tot, paste0("data/processed/TS_sd_productivity_tot_",site,".txt"),sep="\t",row.names = F)
+}
+write.table(TS_prod_tot, paste0("data/processed/TS_prod_tot_ALL sites_filtered ",filter,".txt"),sep="\t",row.names = F)
+
+# spread the data frame and compute confidence interval
+TS_prod_tot <- read.table(paste0("data/processed/TS_prod_tot_ALL sites_filtered ",filter,".txt"),header=T)
+TABLE_PLOT <- NULL
+for (sit in SITE){ # Write TS in a format ready to plot (spread the data)
+  table_plot <- 
+    TS_prod_tot %>% 
+    filter(site == sit) %>% 
+    select(TS,site,order,simul) %>% 
+    spread(order,TS) %>% # spread 
+    median_conf_int() # compute the confidence interval
+  TABLE_PLOT <- rbind(TABLE_PLOT,table_plot)
 }
 
-for (site in SITE){ # Write TS in a format ready to plot (spread the data)
-  TS_prod_tot <- read.table(paste0("data/processed/TS_sd_productivity_tot_",site,".txt"),header=T)
-  TempStab <- select(TS_prod_tot,TS,site,order,simul)
-  write.table( spread(TempStab,order,TS) , paste0("data/processed/TS_productivity_tot_",site,".txt"),sep="\t",row.names = F)
-  }
-
-# Add median confidence interval to temporal stability data ####
-for (site in SITE){
-  table <- read.table(paste0("data/processed/TS_productivity_tot_",site,".txt"),header=T)
-  table3 <- median_conf_int(table)
-  
-  write.table(table3,paste0("data/processed/TS_productivity_tot_",site,"_with interval_median.txt"))
+if (filter) {
+  write.table(TABLE_PLOT , paste0("data/processed/TS_productivity_tot_filtered_with interval_median.txt"),sep="\t",row.names = F)
+} else {
+  write.table(TABLE_PLOT , paste0("data/processed/TS_productivity_tot_unfiltered_with interval_median.txt"),sep="\t",row.names = F)
 }
 
