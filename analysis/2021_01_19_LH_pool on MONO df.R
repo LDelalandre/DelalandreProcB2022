@@ -72,34 +72,3 @@ MONO_ALL3 %>%
   mutate(persists_mixt=MIXT_ALL2$persists) %>% 
   mutate(mixture_t_ha=MIXT_ALL2$mixture_t_ha)
 
-#________________________
-
-MONO_ALL2[900:925,] %>%  
-  mutate(mixture_t_ha=purrr::map_dbl(SName,get_mixt_prod,MIXT_ALL,sit,ord,sim)) %>% 
-  mutate(persists_mixt=purrr::map_dbl(SName,get_persist_prod,MIXT_ALL,sit,ord,sim))
-# ça a pas l'air bon ici.
-
-####
-get_mixt_prod <- function(spec,MIXT_ALL,sit,ord,sim){ # extracts the productivity in monoculture of one species from the MIXT data frame.
-  MIXT <- MIXT_ALL %>% filter(site==sit & order==ord & simul==sim)
-  
-  if(spec %in% MIXT$species){
-    position <- grep(spec,MIXT$species) # where is the species spec in the MIXT data frame
-    MIXT$mixture_t_ha[position] # Get its productivity in monoculture
-  } else{0}
-}
-
-get_persist_prod2 <- function(spec,MIXT_ALL,sit,ord,sim){ # extracts the productivity in monoculture of one species from the MIXT data frame.
-  MIXT <- MIXT_ALL %>% filter(site==sit & order==ord & simul==sim)
-  
-  if(spec %in% MIXT$species){
-    position <- grep(spec,MIXT$species) # where is the species spec in the MIXT data frame
-    as.numeric(MIXT$persists[position]) # 0 if it does not persist
-  } else{-1} # /!\ it indicates that not only the species biomass is under threshold, but even that it was = 0, not 0.001
-}
-
-get_persist_prod <- function(spec,MIXT_ALL,sit,ord,sim){ # extracts the productivity in monoculture of one species from the MIXT data frame.
-  MIXT <- MIXT_ALL %>% filter(site==sit & order==ord & simul==sim)
-  position <- grep(spec,MIXT$species) # where is the species spec in the MIXT data frame
-  as.numeric(MIXT$persists[position]) # 0 if it does not persist
-}
