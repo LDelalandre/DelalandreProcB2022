@@ -1,6 +1,6 @@
 source("R/Common variables.R")
-
 library("dplyr")
+# NOTE: I don't keep this analysis, I pool on MONO
 
 # functions ####
 get_mono_prod <- function(spec,MONO){ # extracts the productivity in monoculture of one species from the MONO data frame.
@@ -9,9 +9,10 @@ get_mono_prod <- function(spec,MONO){ # extracts the productivity in monoculture
 }
 
 # Add productivity in monoculture to mixture data frames ####
+MONO1 <- read.table("data/processed/productivity_monoculture_ALL sites.txt",header=T)
 POOLED_MIXT <- NULL
 for (sit in SITE){
-  MONO <- read.table("data/processed/productivity_monoculture_ALL sites.txt",header=T) %>% 
+  MONO <-  MONO1 %>% 
     filter(site==sit) %>% 
     arrange(SName) 
   
@@ -35,7 +36,7 @@ POOLED_MIXT2 <- POOLED_MIXT %>%
   
 eee <- POOLED_MIXT2 %>% 
   mutate(YO=sum(YOi)) %>%
-  mutate(RYEi=1/nb_sp_regional_pool) %>% # /!\ I'm not sure which pool I should take here! 
+  mutate(RYEi=1/nb_sp_realized_pool) %>% # /!\ I'm not sure which pool I should take here! 
   # "N = number of species in the mixture" (Loreau and Hector, 2001).
   # And: "RYEi = expected relative yield of species i in the mixture, which is simply its proportion seeded or planted"
   # So it should be 1/regional pool, I guess.
@@ -48,7 +49,9 @@ eee <- POOLED_MIXT2 %>%
   mutate(Mavg = mean(Mi)) %>%
   mutate(DeltaRYavg = mean(DeltaRYi)) %>%
   
-  mutate(Cpltarity = nb_sp_regional_pool*DeltaRYavg*Mavg) %>%
+  mutate(Cpltarity = nb_sp_realized_pool*DeltaRYavg*Mavg) %>%
   mutate(Selection = DeltaY - Cpltarity)%>%
   
-  mutate(Selection2=nb_sp_regional_pool*cov(DeltaRYi,Mi))
+  mutate(Selection2=nb_sp_realized_pool*cov(DeltaRYi,Mi))
+
+

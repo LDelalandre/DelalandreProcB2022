@@ -68,7 +68,9 @@ MONO_ALL3 <- MONO_ALL2 %>%
 
 
 # combine them
-MONO_ALL3 %>% 
+ALL_POOLED <- MONO_ALL3 %>% 
   mutate(persists_mixt=MIXT_ALL2$persists) %>% 
   mutate(mixture_t_ha=MIXT_ALL2$mixture_t_ha)
+
+write.table(ALL_POOLED,"data/processed/LH_productivity_specific_every condition.txt",row.names=F,sep="\t")
 
