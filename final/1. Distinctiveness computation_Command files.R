@@ -22,11 +22,12 @@ dev.off()
 # position of the species on the first four axis
 distACP <- ACP1$ind$coord %>% 
   as.data.frame() %>%
-  select(Dim.1    ,   Dim.2     ,   Dim.3      ,  Dim.4) %>%
-  traits_dist() # here we compute the functional distinctiveness
-distACP$SName<-rownames(distACP)
+  select(Dim.1    ,   Dim.2     ,   Dim.3      ,  Dim.4) 
 
-distinct_tot <-  distACP
+distACP$SName<-rownames(distACP) 
+
+distinct_tot <-  distACP %>%
+  traits_dist() # here we compute the functional distinctiveness
 
 write.table(select(distinct_tot,Di,SName),"data/raw/distinctiveness of the species.txt",row.names=F)
 

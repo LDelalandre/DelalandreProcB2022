@@ -2,6 +2,9 @@ source("R/Common variables.R")
 source("R/Analysis_data.R")
 source("R/Monocultures_functions.R")
 
+# Write informative tables ####
+make_table_name_sname()
+
 # CAREFUL not to run all the code: it includes processing data and writing tables, which:
 # - takes a lot of time
 # - can overwrite previous data frames
@@ -107,7 +110,7 @@ for (site in SITE){
   }
 }
 
-# write.table(ALL,"data/processed/biomass_specific_ALL sites.txt",sep="\t",row.names=F)
+write.table(ALL,"data/processed/biomass_specific_ALL sites.txt",sep="\t",row.names=F)
 
 # PRODUCTIVITY MIXTURES ####
 # Specific productivity ####

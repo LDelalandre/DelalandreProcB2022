@@ -64,8 +64,8 @@ plot_Di_Di <- function(toplot){
   ggplot(toplot,aes(x=Di.forceeps,y=Di.focus,label=SName)) +
     labs(x="Distinctiveness computed on ForCEEPS parameters",y="Distinctiveness computed on TRY traits") +
     geom_point()+
-    geom_label()+
-    geom_smooth(method=lm)
+    geom_label()
+    # geom_smooth(method=lm)
 }
 
 # Files ####

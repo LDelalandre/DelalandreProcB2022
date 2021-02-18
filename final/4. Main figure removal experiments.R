@@ -87,7 +87,7 @@ environmental_plot <- function(PLOT,COORD){
     ylab("Annual precipitations (mm)") +
     xlim(0,12) +
     ylim(380,1500)+
-    theme_article(base_size=18)
+    egg::theme_article(base_size=18)
   
   #_______________________________________________________________________________
   # Insert the graphs in the environmental plot ####

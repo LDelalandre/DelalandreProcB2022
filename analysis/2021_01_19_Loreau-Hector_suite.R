@@ -34,42 +34,71 @@ LHtest <- ALL_POOLED2 %>%
   mutate(Selection = DeltaY - Cpltarity)%>%
   
   mutate(Selection2=nb_sp_realized_pool*cov(DeltaRYi,Mi)) %>% 
-  mutate(Relative_DeltaY = DeltaY/YO)
+  mutate(Relative_DeltaY = DeltaY) %>% #/YO
+  mutate(Relative_Selection = Selection) %>% #/YO
+  mutate(Relative_Complementarity = Cpltarity) #/YO
 
-# Generate columns with median confidence interval 
+# Chose between the 3 following measures (and run the corresponding code only)
+# Absolute delta Y
+LHplot3 <- LHtest %>% 
+  group_by(site,order,simul) %>% 
+  summarize(DeltaY=mean(DeltaY)) %>% # compute community-level productivity
+  spread(order,DeltaY) # spread the data frame to plot it
+LHplot3[is.na(LHplot3)] <- 0
+
+datatoplot <- LHplot3
+measure <- "Deltay"
+
+# Absolute selection
+LHplot3 <- LHtest %>% 
+  group_by(site,order,simul) %>% 
+  summarize(Selection=mean(Selection)) %>% # compute community-level productivity
+  spread(order,Selection) # spread the data frame to plot it
+LHplot3[is.na(LHplot3)] <- 0
+
+datatoplot <- LHplot3
+measure <- "Selection"
+
+# Absolute Cpltarity
+LHplot3 <- LHtest %>% 
+  group_by(site,order,simul) %>% 
+  summarize(Cpltarity=mean(Cpltarity)) %>% # compute community-level productivity
+  spread(order,Cpltarity) # spread the data frame to plot it
+LHplot3[is.na(LHplot3)] <- 0
+
+datatoplot <- LHplot3
+measure <- "Complementarity"
+
+# Relative delta Y
 LHplot3 <- LHtest %>% 
   group_by(site,order,simul) %>% 
   summarize(Relative_DeltaY=mean(Relative_DeltaY)) %>% # compute community-level productivity
   spread(order,Relative_DeltaY) # spread the data frame to plot it
 LHplot3[is.na(LHplot3)] <- 0
 
-sit="Bever"
-result <- as.data.frame(LHplot3) %>% 
-  filter(site==sit) %>% 
-  median_conf_int()
+datatoplot <- LHplot3
+measure <- "Relative_Deltay"
 
-ggplot(result,aes(x=simul-1,y=decreasing)) +  
-  gg_removal_productivity()+
-  ggtitle(sit)
+# Selection
+LHplotSelection <- LHtest %>% 
+  group_by(site,order,simul) %>% 
+  summarize(Selection=mean(Relative_Selection)) %>% # compute community-level productivity
+  spread(order,Selection) # spread the data frame to plot it
+LHplotSelection[is.na(LHplotSelection)] <- 0 
 
+datatoplot <- LHplotSelection
+measure <- "Relative_Selection"
 
-# plots
-LHplot <- LHtest %>% 
-  filter(order %in% c("decreasing","increasing"))
+# Complementarity
+LHplotComplementarity <- LHtest %>% 
+  group_by(site,order,simul) %>% 
+  summarize(Complementarity=mean(Relative_Complementarity)) %>% # compute community-level productivity
+  spread(order,Complementarity) # spread the data frame to plot it
+LHplotComplementarity[is.na(LHplotComplementarity)] <- 0 
 
-ggplot(LHplot,aes(x=simul,y=Relative_DeltaY,color=order))+
-  geom_line()+
-  facet_wrap(~site)+
-  scale_color_manual(name="Species lost first",labels=c("Distinct", "Common"),values=c("#F8766D", "#00BFC4"))
+datatoplot <- LHplotComplementarity
+measure <- "Relative_Complementarity"
 
-sit <- "Bever"
-LHplot2 <- LHtest %>% 
-  filter(site==sit)
-ggplot(LHplot2,aes(x=simul,y=Relative_DeltaY,color=order))+
-  geom_line()+
-  geom_point(data=filter(LHplot2,order=="decreasing"))+
-  geom_point(data=filter(LHplot2,order=="increasing"))
-  scale_color_manual(name="Species lost first",labels=c("Distinct", "Common"),values=c("#F8766D", "#00BFC4"))
 
 
 #_______________________________________________________________________________
@@ -84,17 +113,12 @@ COORD <- sites %>%
   select(Site,Temp_moy,Annual_ppt) %>% 
   arrange(Temp_moy,Annual_ppt)
 
-
-# datatoplot <- read.table(paste0("data/processed/",measure,"_with interval_median.txt"),header=T)
-measure <- "Relative_DeltaY"
-sit <- "Bern"
-
 # generate graphs for each site
 PLOT <- list()
 i <- 0
 for (sit in COORD$Site){
   i <- i+1
-  result <- as.data.frame(LHplot3) %>% 
+  result <- as.data.frame(datatoplot) %>% 
     filter(site==sit) %>% 
     median_conf_int()
   
@@ -112,14 +136,14 @@ for (sit in COORD$Site){
 }
 
 # Add axes labels for one site (Bever chosen here)
-result <- as.data.frame(LHplot3) %>% 
+result <- as.data.frame(datatoplot) %>% 
   filter(site=="Bever") %>% 
   median_conf_int()
 PLOT[[2]] <- ggplot(result,aes(x=simul-1,y=decreasing)) + 
   gg_removal_productivity() +
   theme(axis.title=element_text()) +
   ggtitle("Bever") +
-  ylab("Relative Delta Y")
+  ylab(measure)
 
 # generate the final graph
 environmental_plot(PLOT,COORD)
