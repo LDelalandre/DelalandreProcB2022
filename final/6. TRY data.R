@@ -68,21 +68,12 @@ plot_Di_Di <- function(toplot){
     # geom_smooth(method=lm)
 }
 
-# Files ####
-extract <- read.csv("data/TRY/leo_dataset.csv") # full dataset
-
-#_____________________________________________________________
-# FORCEEPS #### 
-# Compute Distinctiveness on ForCEEPS parameters
-traits <- read.table("data/traits of the species_complete.txt",header=T)
-row.names(traits) <- traits$SName
-traits.simulations <- select(traits,Name,SName, HMax, AMax,   G, DDMin, WiTN, WiTX, DrTol, NTol, Brow,   Ly, La,S,A1max, A2)
-traits.simulations <- select(traits.simulations,-c(Name,SName))
-dist.ForCEEPS <- comp_fct_dist(traits.simulations)
 
 
 #______________________
-# Tidy TRY dataset ####
+# I) Tidy TRY dataset - DO IT ONCE ONLY ####
+# Files ####
+extract <- read.csv("data/TRY/leo_dataset.csv") # full dataset
 
 # Filter the data
 extract2 <- extract %>% 
@@ -93,6 +84,24 @@ extract2 <- extract %>%
 # Organize it so that species are in rows and mean values for their traits in columns
 pivot.table <- with(extract2,tapply(StdValue,list(AccSpeciesName,TraitName),mean)) # I compute the mean of trait values for each species
 pivot.table <- data.frame(pivot.table)
+
+write.table(pivot.table,"data/processed/traits from TRY.txt")
+
+#_____________________________________________________________
+# II) ANALYSIS ####
+# readRDS("data/TRY/try_8066_50997.Rds") # sorbus aucuparia
+
+# FORCEEPS
+# Compute Distinctiveness on ForCEEPS parameters
+traits <- read.table("data/traits of the species_complete.txt",header=T)
+row.names(traits) <- traits$SName
+traits.simulations <- select(traits,Name,SName, HMax, AMax,   G, DDMin, WiTN, WiTX, DrTol, NTol, Brow,   Ly, La,S,A1max, A2)
+traits.simulations <- select(traits.simulations,-c(Name,SName))
+dist.ForCEEPS <- comp_fct_dist(traits.simulations)
+
+# TRY
+pivot.table <- read.table("data/processed/traits from TRY.txt")
+
 
 #____________________________________________
 # DIAZ: SM + LMA + H + SSD + LA  + Nmass ####
