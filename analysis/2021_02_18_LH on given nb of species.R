@@ -32,15 +32,19 @@ LHtest <- ALL_POOLED2 %>%
   mutate(Selection = DeltaY - Cpltarity)%>%
   
   mutate(Selection2=nb_sp_realized_pool*cov(DeltaRYi,Mi)) %>% 
-  mutate(Relative_DeltaY = DeltaY) %>% #/YO
-  mutate(Relative_Selection = Selection) %>% #/YO
-  mutate(Relative_Complementarity = Cpltarity) #/YO
+  mutate(Relative_DeltaY = DeltaY/YE) %>% #/YO
+  mutate(Relative_Selection = Selection/YE) %>% #/YO
+  mutate(Relative_Complementarity = Cpltarity/YE) #/YO
 
 #_____________________________________________________
 # Analysis ####
 LHinfo <- LHtest %>% 
   group_by(site,order,simul) %>% 
   summarize(DeltaY=mean(DeltaY),Cpltarity=mean(Cpltarity),Selection=mean(Selection))
+
+LHinfoRelative <- LHtest %>% 
+  group_by(site,order,simul) %>% 
+  summarize(DeltaY=mean(Relative_DeltaY),Cpltarity=mean(Relative_Complementarity),Selection=mean(Relative_Selection))
 
 # 15 species either Di or not ####
 
@@ -163,8 +167,6 @@ Adelboden15sp %>%
 x=15
 subsetsp <- LHinfo %>% filter(!(order %in%c("decreasing","increasing")) & simul == x+1)
 
-x=14
-subsetsp <- LHinfo %>% filter(!(order %in%c("decreasing","increasing")) & simul == x+1)
 
 orders_remov <- read.table("data/Orders of removal of cmd files.txt")
 dist <- read.table("data/raw/distinctiveness of the species.txt",header=T)
@@ -239,8 +241,50 @@ summary(mod)
 mod <- lme4::lmer(DeltaY~meanDi + (meanDi|site),subsetsp2)
 anova(mod,test="Chisq")
 
+# all the simul, and nb of species as a fixed, continuous effect ####
+LHinfo2 <- LHinfo %>% filter(!(order %in%c("decreasing","increasing")) & simul %in% c(7:23))
+
+LHinfoRelative2 <- LHinfoRelative %>% filter(!(order %in%c("decreasing","increasing")) & simul %in% c(7:23))
+
+LHinfo3 <- LHinfoRelative2 %>%  #LHinfo2 %>% 
+  mutate(meanDi = map_dbl(order,extract_meanDi,"mean")) %>% 
+  mutate(medianDi = map_dbl(order,extract_meanDi,"median")) %>% 
+  mutate(sdDi = map_dbl(order,extract_meanDi,"sd")) %>% 
+  mutate(nbsp = 31-simul)
+
+hist(LHinfo2$DeltaY) # normalité
+
+ggplot(LHinfo3,aes(x=sdDi,y=DeltaY))+
+  geom_point() +
+  geom_jitter() +
+  geom_smooth(method="lm") +
+  facet_wrap(~site)
+
+ggplot(LHinfo3,aes(x=nbsp,y=DeltaY))+
+  geom_point() +
+  geom_jitter() +
+  geom_smooth(method="lm") 
+  facet_wrap(~site)
 
 
+mod1 <- lm(DeltaY~sdDi + site + nbsp,data=LHinfo3)
+mod2 <- lm(Selection~sdDi + site + nbsp,data=LHinfo3)
+mod3 <- lm(Cpltarity~sdDi + site + nbsp,data=LHinfo3)
+
+Anova(mod1)
+summary(mod1)
+
+Anova(mod2)
+summary(mod2)
+
+Anova(mod3)
+summary(mod3)
+
+LHinfo3 %>% 
+  filter(sdDi<0.3) %>% 
+  pull(order) %>% 
+  unique()
+#__________________________________________________________
 # Separate into two halves (di or not)
 
 commonhalf <- dist %>% 
