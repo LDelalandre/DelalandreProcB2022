@@ -96,8 +96,8 @@ write.table(pivot.table,"data/processed/traits from TRY.txt")
 traits <- read.table("data/traits of the species_complete.txt",header=T)
 row.names(traits) <- traits$SName
 traits.simulations <- select(traits,Name,SName, HMax, AMax,   G, DDMin, WiTN, WiTX, DrTol, NTol, Brow,   Ly, La,S,A1max, A2)
-traits.simulations <- select(traits.simulations,-c(Name,SName))
-dist.ForCEEPS <- comp_fct_dist(traits.simulations)
+traits.simulations2 <- select(traits.simulations,-c(Name,SName))
+dist.ForCEEPS <- comp_fct_dist(traits.simulations2)
 
 # TRY
 pivot.table <- read.table("data/processed/traits from TRY.txt")

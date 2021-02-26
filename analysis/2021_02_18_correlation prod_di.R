@@ -49,20 +49,43 @@ prod_per_site_mixt <- function(ord,sim,mono){
   MIXTURES2 <- MIXTURES %>% mutate(group = map_chr(species,group_of_distinct))
   
   if (mono){
-    plotcor <- ggplot(MIXTURES2,aes(x=Di,y=monoculture_t_ha,label=species,color=group))+
+    common15 <- read.table("data/raw/distinctiveness of the species.txt",header=T) %>% 
+      arrange(Di) %>% 
+      filter(rownames(.) %in% c(1:15))
+    
+    MIXTURES3 <- MIXTURES2 %>% 
+      mutate(group = map_chr(species,group_of_distinct)) %>% 
+      mutate(half = case_when(species %in% common15$SName ~ "common15",
+                              TRUE ~ "distinct15"))
+    
+    plotcor <- ggplot(MIXTURES3,aes(x=Di,y=monoculture_t_ha,label=species,color=group))+
       geom_point()+
       facet_wrap(~site,ncol=3)+
       # geom_smooth(method=lm)+
       # ggpubr::stat_cor(method="spearman")+
       geom_label()
-    ggsave(filename = paste0("figures/2021_02_18_correlation prod di/mono_ord=",ord,"_sp_lost=",nb_sp_lost,".png"), 
+    ggsave(filename = paste0("figures/2021_02_18_correlation prod di/Correlation prod_Di.png"), 
            plot = plotcor,
            width = 35, 
            height = 40,
            units = "cm",
            dpi = 150) # normally dpi=300 to print it
     
-    plotcor
+    for (whichgroup in c("common15","distinct15")){
+      plotcor <- ggplot(MIXTURES3 %>% filter(half==whichgroup),aes(x=Di,y=monoculture_t_ha,label=species,color=group))+
+        geom_point()+
+        facet_wrap(~site,ncol=3)+
+        # geom_smooth(method=lm)+
+        # ggpubr::stat_cor(method="spearman")+
+        geom_label()
+      ggsave(filename = paste0("figures/2021_02_18_correlation prod di/Correlation prod_Di",whichgroup,".png"), 
+             plot = plotcor,
+             width = 35, 
+             height = 40,
+             units = "cm",
+             dpi = 150) # normally dpi=300 to print it
+    }
+
   } else{
     plotcor <- ggplot(MIXTURES2,aes(x=Di,y=mixture_t_ha,label=species,color=group))+
       geom_point()+

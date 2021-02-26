@@ -80,7 +80,7 @@ PCA_and_correlation <- function(selected){
     pull(Di)
   cortest <- cor.test(A,B,method="spearman")
   
-  list(PCA,cortest)
+  list(PCA,distinct_new,cortest)
 }
 
 # CODE ####
@@ -99,3 +99,13 @@ selected <- selected_traits %>%
   select(-c(A1max,DDMin,NTol,WiTX))
 
 PCA_and_correlation(selected)
+
+
+# iii) Annette's suggestion ####
+selected <- selected_traits %>%
+  select(c(HMax,AMax,G,Brow,Ly,La))
+
+out <- PCA_and_correlation(selected)
+newdi <- out[[2]] %>% 
+  arrange(desc(Di))
+# we keep the order rather well, but we lose PCem which gets common.

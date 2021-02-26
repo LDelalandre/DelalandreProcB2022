@@ -49,13 +49,33 @@ plot_pca <-
   labs(x=paste0("Dim 1 (",var.explain.dim1,"%)"),
        y=paste0("Dim 2 (",var.explain.dim2,"%)") ) +
     theme_classic() +
-  theme(axis.title=element_text(size=15),axis.text=element_text(size=15)) 
+  theme(axis.title=element_text(size=15),axis.text=element_text(size=15))
   
 
 ggsave("paper_2/PCA.png",plot_pca,height=26,width=33,units="cm",dpi="print")
 
 percent_var <- factoextra::fviz_eig(ACP1, addlabels = TRUE, ylim = c(0, 30))
 ggsave(filename = "paper_2/#figur_variance_axis.png",plot = percent_var)
+
+# try to draw circles around groups of species:
+circleFun <- function(center = c(0,0),diameter = 1, npoints = 100){
+  r = diameter / 2
+  tt <- seq(0,2*pi,length.out = npoints)
+  xx <- center[1] + r * cos(tt)
+  yy <- center[2] + r * sin(tt)
+  return(data.frame(x = xx, y = yy))
+}
+
+# And a demonstration of it's use:
+
+dat <- circleFun(c(1,-1),2.3,npoints = 100)
+#geom_path will do open circles, geom_polygon will do filled circles
+ggplot(dat,aes(x,y)) + geom_path()
+
+dat <- circleFun(c(1,-1),2.3,npoints = 100)
+plot_pca +
+  geom_path(data=dat,aes(x=x,y=y))
+  
 
 
 # ii) SENSITIVITY ANALYSIS: bootstrap ####

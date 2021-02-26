@@ -19,7 +19,7 @@ gg_removal_productivity <- function(){
     geom_ribbon(aes(ymin=int_min, ymax=int_max), alpha=0.5,fill="grey60") ,
     geom_line(aes(x=simul-1,y=int_max, color="grey60"),size=0) ,
     geom_line(aes(x=simul-1,y=int_min, color="grey60"),size=0) ,
-    ggtitle(site) ,
+    # ggtitle(site) ,
     # theme(plot.title = element_text(size=10)) ,
     scale_x_continuous(breaks = 10*c(1:3)) ,
     theme(legend.position = "none" ) ,
