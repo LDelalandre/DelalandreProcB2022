@@ -177,3 +177,75 @@ for (measure in c("productivity_tot","TS_productivity_tot_unfiltered","TS_produc
 }
 
 
+# New possible figure ####
+measure <- "productivity_tot"
+datatoplot <- read.table(paste0("data/processed/",measure,"_with interval_median.txt"),header=T)
+# Environmental conditions
+sites <- read.table("data/Site description.txt",header=T)
+sites$number <- c(5,6,4,7,8,9,3,1,10,2,11) # number the sites in the environmental graph
+sites_order_plot <- sites %>% 
+  arrange(number) 
+
+# all the plots
+PLOT <- list()
+i <- 0
+for (sit in sites_order_plot$Site){
+  nb <- sites_order_plot %>% 
+    filter(Site==sit) %>% 
+    pull(number)
+  i <- i+1
+  result <- 
+    datatoplot %>% 
+    filter(site==sit)
+  PLOT[[i]] <- ggplot(result,aes(x=simul-1,y=decreasing)) +  
+    gg_removal_productivity()+
+    ggtitle(paste0(nb,". ",sit))
+}
+
+legend <- 
+  read.table(paste0("data/processed/productivity_tot_with interval_median.txt"),header=T) %>% 
+  filter(site=="Bever") %>% 
+  extract_legend() 
+
+environment_number <-
+  ggplot(sites, aes(x=Temp_moy,y=Annual_ppt,label=number))+
+  geom_point()+
+  xlab("Average temperature (°C)")+
+  ylab("Annual precipitations (mm)") +
+  xlim(1,10) +
+  ylim(380,1500)+
+  ggrepel::geom_text_repel() +
+  egg::theme_article(base_size=10)
+
+complete_plot3 <- grid.arrange( PLOT[[1]],PLOT[[2]], PLOT[[3]],
+     PLOT[[4]], PLOT[[5]],PLOT[[6]],
+     PLOT[[7]],PLOT[[8]],PLOT[[9]],
+     PLOT[[10]], PLOT[[11]],legend,
+     ncol = 3, nrow = 4, 
+     layout_matrix = rbind( c(0,1,2),c(3,4,5),c(6,7,8),
+                           c(9,10,11)))
+library(ggpubr)
+complete_plot4 <- annotate_figure(complete_plot3,
+                # top = text_grob("Visualizing len", color = "red", face = "bold", size = 14),
+                # bottom = text_grob("Data source: \n ToothGrowth data set", color = "blue",
+                #                    hjust = 1, x = 1, face = "italic", size = 10),
+                bottom = text_grob("Number of species lost", rot = 0,size=15),
+                left = text_grob("Ecosystem productivity (t/ha)",rot=90,size=15),
+                # fig.lab = "Figure 1", fig.lab.face = "bold"
+)
+
+library("cowplot")
+width_A <- .6
+height_A <- .2
+p <- ggdraw() +
+  draw_plot(environment_number, x = (1-width_A)/2, y = 1-height_A, width = width_A, height = height_A) +
+  draw_plot(complete_plot4, x = 0, y = 0, width = 1, height = 1-height_A) +
+  draw_plot_label(label = c("A", "B"), size = 15,
+                  x = c(0, 0), y = c(1, 1-height_A))
+
+ggsave(filename = paste0("paper_2/Main figure_",measure,"_removal.png"), 
+       plot = p,
+       width = 20, 
+       height = 30,
+       units = "cm",
+       dpi = 300)
