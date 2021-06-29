@@ -1,4 +1,5 @@
 library(tidyverse)
+require(dunn.test)
 source("R/Common variables.R")
 
 # Di_order <- read.table("data/raw/distinctiveness of the species.txt",header=T) %>% 
@@ -46,25 +47,66 @@ get_productivity_drop <- function(site,order){
     select(site,simul,order)
   
   prod_drop <- c()
+  prod_init <- prod_tot_site_order[1,3]
   for (i in c(1:29)){
-    prod_drop <- c(prod_drop,prod_tot_site_order[i+1,3]-prod_tot_site_order[i,3])
+    prod_i2 <- prod_tot_site_order[i+1,3]
+    prod_i1 <- prod_tot_site_order[i,3]
+    # prod_drop <- c(prod_drop, (prod_i1-prod_i2)/prod_i1 ) # drop relative to i-1 prod
+    # prod_drop <- c(prod_drop, (prod_i2-prod_i1) ) # absolute drop
+    prod_drop <- c(prod_drop, (prod_i1-prod_i2)/prod_init ) # drop relative to 30 sp prod
   }
   prod_drop <- c(prod_drop,prod_tot_site_order[30,3]) # removing last species
   
-  species_group$prod_drop <- prod_drop
+  species_group %>% 
+    mutate(prod_drop = prod_drop) %>% 
+    mutate(site=sit,order=order)
   
-  # plot ####
-  ggplot(species_group,aes(x=group,y=prod_drop)) +
-    geom_boxplot() +
-    ggtitle(paste(sit,order))
+
 }
 
-sit <- "GrandeDixence"
-order <- "random_10"
+# Relative drop
+DROP <- NULL
 for (sit in SITE){
   for (order in ORDER){
-    fig <- get_productivity_drop(sit,order)
-    ggsave(paste0("figures/Drop_f_group/",sit,"_",order,".png"),plot=fig) 
+    species_group <- get_productivity_drop(sit,order)
+    DROP <- rbind(DROP,species_group)
   }
 }
+DROP$prod_drop <- as.numeric(DROP$prod_drop)
 
+# Plot
+
+ggplot(DROP,aes(x=group,y=prod_drop)) +
+  facet_wrap(~site)+
+  geom_boxplot()
+
+sit <- "Adelboden"
+
+TESTS <- NULL
+for (sit in SITE){
+  DROP2 <- DROP %>% 
+    filter(site==sit)
+  
+  ktest <- kruskal.test(x=DROP2$prod_drop,g=DROP2$group)
+  ktest$p.value
+  
+  dtest <- dunn.test::dunn.test(x=DROP2$prod_drop,g=DROP2$group)
+  TESTi <- data.frame(site=sit,
+             k.pval = rep(ktest$p.value,6),
+             comparisons = dtest$comparisons,
+             Z = dtest$Z,
+             P.adjusted = dtest$P.adjusted)
+  TESTS <- rbind(TESTS,TESTi)
+}
+
+TESTS %>% 
+  filter(Z>0 & P.adjusted<0.05)
+
+# just in decreasing order ###
+
+orde <- "decreasing"
+DROP3 <- DROP %>% filter(order==orde)
+
+ggplot(DROP3,aes(x=group,y=prod_drop)) +
+  facet_wrap(~site)+
+  geom_boxplot()
