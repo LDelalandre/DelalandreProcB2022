@@ -2,6 +2,7 @@
 library(ggplot2)
 library(cowplot)
 library(egg) # for theme_article
+library(purrr)
 
 # scripts ####
 source("R/Common variables.R")
@@ -22,6 +23,7 @@ gg_removal_productivity <- function(){
     # ggtitle(site) ,
     # theme(plot.title = element_text(size=10)) ,
     scale_x_continuous(breaks = 10*c(1:3)) ,
+    theme_light(),
     theme(legend.position = "none" ) ,
     xlab("Number of species removed"),
     ylab("Productivity (t/ha)"),
@@ -182,9 +184,11 @@ measure <- "productivity_tot"
 datatoplot <- read.table(paste0("data/processed/",measure,"_with interval_median.txt"),header=T)
 # Environmental conditions
 sites <- read.table("data/Site description.txt",header=T)
-sites$number <- c(5,6,4,7,8,9,3,1,10,2,11) # number the sites in the environmental graph
+sites$number <- c(5,6,4,7,8,9,3,2,10,1,11) # number the sites in the environmental graph
 sites_order_plot <- sites %>% 
-  arrange(number) 
+  arrange(number) %>% 
+  mutate(group = c("cold","cold","cold","warm-wet","warm-wet","warm","warm","warm","warm-dry","warm-dry","warm-dry"))
+sites_order_plot$group <- factor(sites_order_plot$group ,levels=c("cold","warm-wet","warm","warm-dry"))
 
 # all the plots
 PLOT <- list()
@@ -208,14 +212,16 @@ legend <-
   extract_legend() 
 
 environment_number <-
-  ggplot(sites, aes(x=Temp_moy,y=Annual_ppt,label=number))+
+  ggplot(sites_order_plot, aes(x=Temp_moy,y=Annual_ppt,label=number,shape=group))+
   geom_point()+
+  scale_shape_manual(values = c(4, 1, 2, 8), name="Environment") +
   xlab("Average temperature (°C)")+
-  ylab("Annual precipitations (mm)") +
+  ylab("Annual precipitation (mm)") +
   xlim(1,10) +
   ylim(380,1500)+
   ggrepel::geom_text_repel() +
   egg::theme_article(base_size=10)
+  
 
 complete_plot3 <- grid.arrange( PLOT[[1]],PLOT[[2]], PLOT[[3]],
      PLOT[[4]], PLOT[[5]],PLOT[[6]],
@@ -235,8 +241,8 @@ complete_plot4 <- annotate_figure(complete_plot3,
 )
 
 library("cowplot")
-width_A <- .6
-height_A <- .2
+width_A <- 1
+height_A <- .3
 p <- ggdraw() +
   draw_plot(environment_number, x = (1-width_A)/2, y = 1-height_A, width = width_A, height = height_A) +
   draw_plot(complete_plot4, x = 0, y = 0, width = 1, height = 1-height_A) +
@@ -247,5 +253,52 @@ ggsave(filename = paste0("paper_2/Main figure_",measure,"_removal.png"),
        plot = p,
        width = 20, 
        height = 30,
+       units = "cm",
+       dpi = 300)
+
+
+# ggplot(result,aes(x=simul-1,y=decreasing)) +  
+#   gg_removal_productivity()+
+#   ggtitle(paste0(nb,". ",sit))
+
+
+# Other main figure ####
+data_AUC1 <- datatoplot %>% 
+  group_by(site) %>% 
+  summarize(decreasing=sum(decreasing)/max(decreasing),increasing=sum(increasing)/max(increasing)) %>%
+  arrange(match(site,sites_order_plot$Site)) %>%
+  mutate(group=sites_order_plot$group) %>% 
+  mutate(number=c(1:11))  %>% 
+  mutate(Temp_moy = sites_order_plot$Temp_moy)
+
+order_loss <- function(orde){
+  if (orde=="increasing"){
+    "distinct last"
+  } else {
+    "distinct first"
+  }
+}
+
+data_AUC2 <- data_AUC1 %>% 
+  gather(order,AUC,-site,-group,-number,-Temp_moy) %>% 
+  mutate(order = map_chr(order,order_loss))
+data_AUC2$group <- factor(data_AUC2$group,levels=c("cold","warm-wet","warm","warm-dry"))
+
+plot_AUC <- ggplot(data_AUC2,aes(x=Temp_moy,y=AUC,label=number,shape=group,color=order))+
+  facet_wrap(~order)+
+  geom_point()+
+  scale_shape_manual(values = c(4, 1, 2, 8),name="Environment") +
+  labs(color="Order of species loss") +
+  egg::theme_article(base_size=11) +
+  # ggrepel::geom_text_repel() +
+  # theme(axis.ticks.x = element_blank(),
+        # axis.text.x = element_blank()) +
+  xlab("Mean annual temperature (°C)") +
+  ylab("Relative area under curve (AUC)")
+  
+ggsave(filename = paste0("paper_2/Main figure 2_AUC.png"), 
+       plot = plot_AUC,
+       width = 17, 
+       height = 10,
        units = "cm",
        dpi = 300)
