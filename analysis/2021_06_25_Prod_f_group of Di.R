@@ -74,14 +74,25 @@ for (sit in SITE){
 }
 DROP$prod_drop <- as.numeric(DROP$prod_drop)
 
-# Plot
+# Plot ####
 
+# Boxplot
 ggplot(DROP,aes(x=group,y=prod_drop)) +
   facet_wrap(~site)+
+  geom_boxplot() +
+  ggsave("figures/Drop_f_group/1. All the sites.png",height = 30,width=30, units="cm")
+
+ggplot(DROP %>% filter(!(group=="common")),aes(x=site,y=prod_drop)) +
   geom_boxplot()
 
-sit <- "Adelboden"
+# Histogram
+ggplot(DROP,aes(x=prod_drop,color=group)) +
+  facet_wrap(~site)+
+  geom_density() +
+  ggsave("figures/Drop_f_group/2. All the sites_density.png",height = 30,width=30, units="cm")
 
+
+# Tests ####
 TESTS <- NULL
 for (sit in SITE){
   DROP2 <- DROP %>% 
@@ -101,6 +112,36 @@ for (sit in SITE){
 
 TESTS %>% 
   filter(Z>0 & P.adjusted<0.05)
+
+table_tests <- TESTS %>%
+  mutate(k.pval = round(k.pval,3)) %>% 
+  mutate(Z = round(Z,2)) %>% 
+  mutate(P.adjusted = round(P.adjusted,3)) %>% 
+  mutate(P.adjusted = paste0("(",P.adjusted,")")) %>% 
+  unite("Dunn",Z:P.adjusted,sep=" ") %>% 
+  spread(comparisons,Dunn)
+
+library("kableExtra")
+
+tabletests<- table_tests %>%
+  # transmute(
+  #   site=site,
+  #   # KW.p.value = k.pval,
+  #   p.value = ifelse(k.pval < 0.05,
+  #                    cell_spec(k.pval, bold = T),
+  #                    cell_spec(k.pval, bold=F)),
+  #  #  "cold-common" = "cold - common",
+  #  # "cold-drought" = "cold - drought",
+  #  #  "cold - small" = "cold - small",
+  #  #  "common - drought" ="common - drought",
+  #  #  "common - small" ="common - small",
+  #  #  "drought - small" = "drought - small"
+  # ) %>%
+  select(site, everything()) %>%
+  kable( escape = F) %>%
+  kable_styling("hover", full_width = F)
+cat(tabletests, file = "paper_2/#drop_prod.doc")
+
 
 # just in decreasing order ###
 

@@ -27,7 +27,8 @@ distACP <- ACP1$ind$coord %>%
 distACP$SName<-rownames(distACP) 
 
 distinct_tot <-  distACP %>%
-  traits_dist() # here we compute the functional distinctiveness
+  traits_dist() %>% # here we compute the functional distinctiveness
+  tibble::rownames_to_column("SName")
 
 write.table(select(distinct_tot,Di,SName),"data/raw/distinctiveness of the species.txt",row.names=F)
 

@@ -241,35 +241,50 @@ summary(mod)
 mod <- lme4::lmer(DeltaY~meanDi + (meanDi|site),subsetsp2)
 anova(mod,test="Chisq")
 
+#_________________________________________________________________________________
 # all the simul, and nb of species as a fixed, continuous effect ####
 LHinfo2 <- LHinfo %>% filter(!(order %in%c("decreasing","increasing")) & simul %in% c(7:23))
 
 LHinfoRelative2 <- LHinfoRelative %>% filter(!(order %in%c("decreasing","increasing")) & simul %in% c(7:23))
 
-LHinfo3 <- LHinfoRelative2 %>%  #LHinfo2 %>% 
+# /!\ change here (ask Xavier for his method)
+LHinfo3 <-  LHinfo2 %>%  # %>% LHinfoRelative2
   mutate(meanDi = map_dbl(order,extract_meanDi,"mean")) %>% 
   mutate(medianDi = map_dbl(order,extract_meanDi,"median")) %>% 
   mutate(sdDi = map_dbl(order,extract_meanDi,"sd")) %>% 
   mutate(nbsp = 31-simul)
 
-hist(LHinfo2$DeltaY) # normalité
+hist(LHinfo3$DeltaY) # normalité
 
-ggplot(LHinfo3,aes(x=sdDi,y=DeltaY))+
+ggplot(LHinfo3,aes(x=nbsp,y=DeltaY))+
+  geom_point() +
+  # geom_jitter() +
+  geom_smooth(method="lm") 
+  facet_wrap(~site)
+
+ggplot(LHinfo3,aes(x=meanDi,y=DeltaY))+
   geom_point() +
   geom_jitter() +
   geom_smooth(method="lm") +
   facet_wrap(~site)
 
-ggplot(LHinfo3,aes(x=nbsp,y=DeltaY))+
+ggplot(LHinfo3,aes(x=meanDi,y=Cpltarity))+
   geom_point() +
   geom_jitter() +
-  geom_smooth(method="lm") 
+  geom_smooth(method="lm") +
   facet_wrap(~site)
 
+ggplot(LHinfo3,aes(x=nbsp,y=Cpltarity))+
+  geom_point() +
+  geom_jitter() +
+  geom_smooth(method="lm") +
+  facet_wrap(~site)
 
-mod1 <- lm(DeltaY~sdDi + site + nbsp,data=LHinfo3)
-mod2 <- lm(Selection~sdDi + site + nbsp,data=LHinfo3)
-mod3 <- lm(Cpltarity~sdDi + site + nbsp,data=LHinfo3)
+mod1 <- lm(DeltaY~meanDi + nbsp + site ,data=LHinfo3)
+mod2 <- lm(Selection~meanDi + nbsp + site,data=LHinfo3)
+mod3 <- lm(Cpltarity~meanDi+ nbsp + site ,data=LHinfo3)
+
+# faire de la sélection de variables step by step
 
 Anova(mod1)
 summary(mod1)

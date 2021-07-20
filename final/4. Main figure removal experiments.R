@@ -1,8 +1,7 @@
 # packages ####
-library(ggplot2)
+library(tidyverse)
 library(cowplot)
 library(egg) # for theme_article
-library(purrr)
 
 # scripts ####
 source("R/Common variables.R")
@@ -179,7 +178,7 @@ for (measure in c("productivity_tot","TS_productivity_tot_unfiltered","TS_produc
 }
 
 
-# New possible figure ####
+# New possible figures ####
 measure <- "productivity_tot"
 datatoplot <- read.table(paste0("data/processed/",measure,"_with interval_median.txt"),header=T)
 # Environmental conditions
@@ -190,6 +189,7 @@ sites_order_plot <- sites %>%
   mutate(group = c("cold","cold","cold","warm-wet","warm-wet","warm","warm","warm","warm-dry","warm-dry","warm-dry"))
 sites_order_plot$group <- factor(sites_order_plot$group ,levels=c("cold","warm-wet","warm","warm-dry"))
 
+# Figure main_1 ####
 # all the plots
 PLOT <- list()
 i <- 0
@@ -268,33 +268,54 @@ data_AUC1 <- datatoplot %>%
   summarize(decreasing=sum(decreasing)/max(decreasing),increasing=sum(increasing)/max(increasing)) %>%
   arrange(match(site,sites_order_plot$Site)) %>%
   mutate(group=sites_order_plot$group) %>% 
+  mutate(number=sites_order_plot$number) %>% 
   mutate(number=c(1:11))  %>% 
   mutate(Temp_moy = sites_order_plot$Temp_moy)
 
+# sites2 <- sites %>%
+#   column_to_rownames("Site") %>% 
+#   select(Temp_moy,Annual_ppt,Na.kg.ha.an.,ProdMax.T.ha.an.)
+# PCA <- FactoMineR::PCA(sites2)
+# coord_sites <- as.data.frame(PCA$ind$coord) %>% 
+#   rownames_to_column() %>% 
+#   rename(site=rowname) %>% 
+#   arrange(match(site,sites_order_plot$Site)) %>% 
+#   mutate(group=data_AUC1$group)
+#   
+# 
+# site_var <- as.data.frame(PCA$var$coord)%>% 
+#   rownames_to_column() %>% 
+#   rename(variable=rowname) 
+
 order_loss <- function(orde){
-  if (orde=="increasing"){
-    "distinct last"
+  if (orde=="decreasing"){
+    "Distinct species lost first"
   } else {
-    "distinct first"
+    "Common species lost first"
   }
 }
 
 data_AUC2 <- data_AUC1 %>% 
-  gather(order,AUC,-site,-group,-number,-Temp_moy) %>% 
+  mutate(Dim.1=coord_sites$Dim.1,Dim.2=coord_sites$Dim.2) %>% 
+  gather(order,AUC,-site,-group,-number,-Temp_moy,-Dim.1,-Dim.2) %>% 
   mutate(order = map_chr(order,order_loss))
 data_AUC2$group <- factor(data_AUC2$group,levels=c("cold","warm-wet","warm","warm-dry"))
+data_AUC2$order <- factor(data_AUC2$order,levels=c("Distinct species lost first","Common species lost first"))
 
-plot_AUC <- ggplot(data_AUC2,aes(x=Temp_moy,y=AUC,label=number,shape=group,color=order))+
+
+plot_AUC <- ggplot(data_AUC2,aes(x=Temp_moy,y=AUC,label=number))+
   facet_wrap(~order)+
   geom_point()+
   scale_shape_manual(values = c(4, 1, 2, 8),name="Environment") +
   labs(color="Order of species loss") +
   egg::theme_article(base_size=11) +
-  # ggrepel::geom_text_repel() +
+  ggrepel::geom_text_repel() +
   # theme(axis.ticks.x = element_blank(),
         # axis.text.x = element_blank()) +
   xlab("Mean annual temperature (°C)") +
-  ylab("Relative area under curve (AUC)")
+  # xlab("Dim.1") +
+  ylab("Relative area under curve (AUC)") 
+  # ggrepel::geom_label_repel(aes(label = site),size = 3.4)
   
 ggsave(filename = paste0("paper_2/Main figure 2_AUC.png"), 
        plot = plot_AUC,
@@ -302,3 +323,30 @@ ggsave(filename = paste0("paper_2/Main figure 2_AUC.png"),
        height = 10,
        units = "cm",
        dpi = 300)
+
+# # PLot PCA 
+# site_var_scaledtoplot <- site_var %>% 
+#   select(variable,Dim.1,Dim.2) %>% 
+#   mutate(Dim.1 = 2.3*Dim.1, Dim.2 = 2.3*Dim.2)
+# 
+# plot_pca <-
+#   ggplot(data=coord_sites,aes(x=Dim.1,y=Dim.2)) +
+#   geom_point(aes(shape=group)) +
+#   scale_shape_manual(values = c(4, 1, 2, 8),name="Environment") +
+#   geom_hline(aes(yintercept=0), size=.2,linetype="longdash") + 
+#   geom_vline(aes(xintercept = 0),linetype = "longdash", size=.2)+
+#   coord_equal() + 
+#   geom_text(data=site_var_scaledtoplot, aes(x=Dim.1, Dim.2, label=variable), size = 5, vjust=1, color="black") +
+#   geom_segment(data=site_var_scaledtoplot, aes(x=0, y=0, xend=Dim.1-0.2, yend=Dim.2-0.2), arrow=arrow(length=unit(0.2,"cm")), alpha=0.75, color="black") +
+#   ggrepel::geom_label_repel(aes(label = site),size = 3) + # or SName
+#   # labs(x=paste0("Dim 1 (",var.explain.dim1,"%)"),
+#        # y=paste0("Dim 2 (",var.explain.dim2,"%)") ) +
+#   theme_classic() +
+#   theme(axis.title=element_text(size=15),axis.text=element_text(size=15))
+# 
+# ggsave(filename = paste0("paper_2/Main figure 2_AUC_PCA.png"), 
+#        plot = plot_pca,
+#        width = 20, 
+#        height = 14,
+#        units = "cm",
+#        dpi = 300)

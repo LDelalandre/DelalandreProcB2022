@@ -75,6 +75,9 @@ plot_Di_Di <- function(toplot){
 # Files ####
 extract <- read.csv("data/TRY/leo_dataset.csv") # full dataset
 
+write.table(head(extract),"data/TRY/head_extract.txt",sep="\t",row.names=F) # head of the table
+write.csv(head(extract),"data/TRY/head_extract.csv",row.names=F) # head of the table
+
 # Filter the data
 extract2 <- extract %>% 
   filter(TraitName!="") %>% # remove lines where no trait is measured (and even defined)
