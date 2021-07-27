@@ -1,18 +1,6 @@
 # Script to process raw data #
-
-# NB: raw data weight ~ 120Go. They will be available as zipped files on Zenodo soon.
-# Raw data curation (aggregate biomass and productivity from the individual level to species level) lasts ~2 to 3 hours on my computer.
-# Intermediary data is available in the "processed" folder.
-# If you want to avoid data curation step, jump directly to script 3. to 6. in the "final" folder. 
-
-source("final/0. Packages.R")
-source("R/Common variables.R")
-source("R/Analysis_data.R")
-source("R/Monocultures_functions.R")
-
-
-# I) Import raw data ####
-# Ask the used if he/she wants to download raw data
+#__________________________________________________________________________________________________
+# RUN THESE LINES FIRST
 ask = function( prompt ) {
   cat( paste0( prompt, ':' ) )
   readLines( n=1 )
@@ -20,7 +8,20 @@ ask = function( prompt ) {
 
 choice = as.character( ask( 'Do you want to download raw data from Zenodo? (yes/no) \n
 N.B. Raw data is heavy (~120 Go) and can be long to download and unzip. ' ) )
+#__________________________________________________________________________________________________
+# Raw data weight ~ 120Go. They will be available as zipped files on Zenodo soon.
+# Raw data curation (aggregate biomass and productivity from the individual level to species level) lasts ~2 to 3 hours on my computer.
+# Intermediary data is available in the "processed" folder.
+# If you want to avoid data curation step, jump directly to script 3. to 6. in the "final" folder. 
 
+# Whatever you choice, you can run the whole code
+source("final/0. Packages.R")
+source("R/Common variables.R")
+source("R/Analysis_data.R")
+source("R/Monocultures_functions.R")
+
+# I) Import raw data ####
+# Ask the used if he/she wants to download raw data
 if (choice == "yes"){
   # Check directory for ForCEEPS output is available, and create it if not ####
   if(file.exists(file.path("data/raw/Output_ForCEEPS"))==F){
@@ -28,7 +29,8 @@ if (choice == "yes"){
   }
   
   # Download compressed raw data from Zenodo ####
-  download_zenodo("10.5281/zenodo.808257", path = "data/raw/Output_ForCEEPS") # change Zenodo doi when my data is uploaded
+  download_zenodo("zenodo doi", path = "data/raw/Output_ForCEEPS") # change Zenodo doi when my data is uploaded
+  # raw datasets are not available online yet. They should be uploaded on Dryad or Zenodo soon.
   
   # Extract files ####
   # Can take a few hours.

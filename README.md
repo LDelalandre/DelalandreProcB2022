@@ -12,6 +12,9 @@ just download the repository:
 
 If you have [Rstudio](https://www.rstudio.com/) installed on your computer, you can then open `Project-1_Distinct-sp_BEF.Rproj` with Rstudio.
 
+You can contact me at <leo.delalandre@cefe.cnrs.fr>
+
+
 ### Structure of the project repository
 
 #### R
@@ -35,15 +38,16 @@ Code to perform simulations using the ForCEEPS model, hosted on
 [Capsis](http://capsis.cirad.fr/capsis/help_en/forceeps) (contact them for any informations about the platform, how to install it on your machine, etc.).
 
 ##### > raw 
-Contains raw ForCEEPS simulation outputs. These are not hosted on the present GitHub repository. Script to download them is to be found in `final/1.2. Import raw data.R`.
+Contains raw ForCEEPS simulation outputs. These are not hosted on the present GitHub repository. Script to download them is to be found in `final/1.2. Import raw data.R`, and will be available from [DRYAD] (https://datadryad.org/stash) soon.
 
 ##### > processed 
 
-Processed data. Available from the present GitHub repository. NB: processed datasets are generated from: `final/2. Process data.R` only if raw data have been downloaded and de-zipped. Otherwise, you can start the analyses from processed data on.
+Processed data. Available from the present GitHub repository. NB: processed datasets are generated from: `final/2. Process data.R` 
+only if raw data have been downloaded and de-zipped. Otherwise, you can start the analyses starting from processed data.
 
 
 
 
 ### Analyses performed
 
-The present code generates scripts used to perform forest succession simulations with the ForCEEPS forest gap model, extracts biomass and productivity outputs and analyses them. Simulations were performed along a broad environmental gradient, either in monocultures or in mixtures whereby species richness gradients enabled us to test the consequences of the presence or absence of functionally distinct species on ecosystem productivity. See the article for more details. 
+The present scripts were used to perform forest succession simulations with the ForCEEPS forest gap model, extracts biomass and productivity outputs and analyses them. Simulations were performed along a broad environmental gradient, either in monocultures or in mixtures whereby species richness gradients enabled us to test the consequences of the presence or absence of functionally distinct species on ecosystem productivity. See the article for more details. 
