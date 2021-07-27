@@ -19,7 +19,7 @@ specific_biomasses_mono <- function(site){
   abundance <- c()
   mean_biom <- c()
   for(i in c(1:30)){
-    mean <- read.table(paste0("data/raw/output-cmd2_",site,"_monoculture.txt/forceps.",site,".site_",i,"_mean.txt"))
+    mean <- read.table(paste0("data/raw/Output_ForCEEPS/",site,"/output-cmd2_",site,"_monoculture.txt/forceps.",site,".site_",i,"_mean.txt"))
     # NB it is in the good order because we made the monocultures in the order of the species Id number.
     colnames(mean)<-colnames_mean
     # biomass averaged on 10 years every 100 years
@@ -48,7 +48,7 @@ specific_productivities_mono <- function(site){
   sd<-c()
   mean <- c()
   for(number in c(1:30)){
-    prod <- try(read.table(paste0("data/raw/output-cmd2_",site,"_monoculture.txt/forceps.",site,".site_",number,"_productivityScene.txt")),silent=T)
+    prod <- try(read.table(paste0("data/raw/Output_ForCEEPS/",site,"/output-cmd2_",site,"_monoculture.txt/forceps.",site,".site_",number,"_productivityScene.txt")),silent=T)
     if (class(prod) != "try-error"){# sometimes, the files are empty, and it returns an error message
       colnames(prod)<-colnames_prod
       prod$totProdBiomass_t_ha <- prod$adultProdBiomass_t_ha + prod$saplingBiomass_t_ha
@@ -78,7 +78,7 @@ specific_productivities_mono <- function(site){
 productivity_specific <- function(site,order,number){
     PROD <- NULL
     
-      prod <- try(read.table(paste0("data/raw/output-cmd2_",site,"_",order,".txt/forceps.",site,".site_",number,"_productivityScene.txt")),silent=T)
+      prod <- try(read.table(paste0("data/raw/Output_ForCEEPS/",site,"/output-cmd2_",site,"_",order,".txt/forceps.",site,".site_",number,"_productivityScene.txt")),silent=T)
       if (class(prod) != "try-error"){# sometimes, the files are empty, and it returns an error message
         colnames(prod)<-colnames_prod
         years_to_keep <- max(prod$date) - c(900,800,700,600,500,400,300,200,100,0)
@@ -103,7 +103,7 @@ sd_productivity_tot <- function(sit,orde,number,persistent.sp,filter){
   # persistent_sp: a vector of Short Names of species belonging to the realized pool
   # fliter: a boolean. If true, we keep only these species
   sigma <- NULL
-  prod <- try(read.table(paste0("data/raw/output-cmd2_",sit,"_",orde,".txt/forceps.",sit,".site_",number,"_productivityScene.txt")),silent=T)
+  prod <- try(read.table(paste0("data/raw/Output_ForCEEPS/",sit,"/output-cmd2_",sit,"_",orde,".txt/forceps.",sit,".site_",number,"_productivityScene.txt")),silent=T)
   if (class(prod) != "try-error"){# sometimes, the files are empty, and it returns an error message
     colnames(prod)<-colnames_prod
     dates <- as.numeric(max(prod$date))- c(900,800,700,600,500,400,300,200,100,0)
