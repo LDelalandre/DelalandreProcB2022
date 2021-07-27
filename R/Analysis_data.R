@@ -98,32 +98,6 @@ productivity_specific <- function(site,order,number){
   PROD
 }
 
-# sd(Productivity) - removal experiments ####
-sd_productivity_tot <- function(sit,orde,number,persistent.sp,filter){
-  # persistent_sp: a vector of Short Names of species belonging to the realized pool
-  # fliter: a boolean. If true, we keep only these species
-  sigma <- NULL
-  prod <- try(read.table(paste0("data/raw/Output_ForCEEPS/",sit,"/output-cmd2_",sit,"_",orde,".txt/forceps.",sit,".site_",number,"_productivityScene.txt")),silent=T)
-  if (class(prod) != "try-error"){# sometimes, the files are empty, and it returns an error message
-    colnames(prod)<-colnames_prod
-    dates <- as.numeric(max(prod$date))- c(900,800,700,600,500,400,300,200,100,0)
-    
-    summed <- prod %>% 
-      mutate(totProdBiomass_t_ha = adultProdBiomass_t_ha + saplingBiomass_t_ha) %>% 
-      filter(date %in% dates) %>%
-      group_by(date) %>% 
-      {if (filter) filter(.,speciesShortName %in% persistent.sp) else .} %>% # filter the species from the realized pool or not
-      summarise(summed=sum(totProdBiomass_t_ha)) # Sum biomass of all the species species every year
-
-    sd <- sd(summed$summed)
-    mu <- mean(summed$summed)
-    TS <- mu/sd
-    sigma <- data.frame(sd=sd,mean=mu,TS,site=sit,order=orde,simul=number)
-  }
-  sigma
-
-}
-
 
 # Median confidence interval ####
 # pbinom(9, size=30, prob=.5) # On cherche k (ici k=9) tel que la probabilité d'avoir moins de k succès soit de 0.025
