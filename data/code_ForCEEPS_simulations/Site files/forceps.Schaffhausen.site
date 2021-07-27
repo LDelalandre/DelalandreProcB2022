@@ -1,0 +1,23 @@
+# Forceps site file
+
+#siteBucketSize: cm?
+#siteAverageNitrogen: ?
+#siteLatitude: deg, north
+#siteSlope: deg
+
+siteName = Schaffhausen
+siteBucketSize = 15
+
+siteAverageNitrogen = 80
+siteLatitude = 47.7
+siteSlope = 0
+
+#siteRegenerationForclimDensity = 0
+siteRegenerationForclimDensity = 0.006
+
+#siteBrowsingDensity = 0
+siteBrowsingDensity = 0.2
+
+siteMaxETPRate = 12
+
+siteFractionInterceptedPrec = 0.3

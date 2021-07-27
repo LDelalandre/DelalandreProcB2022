@@ -1,0 +1,2 @@
+date	patchId	id	speciesId	speciesShortName	genotypeName	age	dbh(cm)	height(m)	crownA1	crownLength	dbhIncrement	slowGrowthIndex	foliageArea	LAI	lightAvailability	algf	treeDroughtIndex	droughtIndexModifier	basalArea(m2)	biomass(kg)	x	y	sp_type	sp_s	sp_hmax	sp_amax	sp_g	sp_ddmin	sp_witn	sp_witx	sp_thot	sp_tco2hot	sp_drtol	sp_ntol	sp_brow	sp_ly	sp_la	sp_lq	sp_immt	sp_ageMaturityForReproduction	sp_localFitness
+

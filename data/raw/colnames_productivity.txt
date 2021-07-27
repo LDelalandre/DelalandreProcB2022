@@ -1,0 +1,1 @@
+date	patchId	speciesId	speciesShortName	adultProdBasalArea	adultProdBiomass	adultTreeBasalArea	adultTreeBiomass	deadBasalArea	deadBiomass	saplingBasalArea	saplingBiomass	adultTreeNumber	deadNumber	saplingNumber	droughtIndexAnnual	droughtIndexSeasonal

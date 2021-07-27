@@ -1,0 +1,23 @@
+# Forceps site file
+
+#siteBucketSize: cm?
+#siteAverageNitrogen: ?
+#siteLatitude: deg, north
+#siteSlope: deg
+
+siteName = Bever
+siteBucketSize = 10
+
+siteAverageNitrogen = 60
+siteLatitude = 46.6
+siteSlope = 0
+
+#siteRegenerationForclimDensity = 0
+siteRegenerationForclimDensity = 0.006
+
+#siteBrowsingDensity = 0
+siteBrowsingDensity = 0.2
+
+siteMaxETPRate = 12
+
+siteFractionInterceptedPrec = 0.3

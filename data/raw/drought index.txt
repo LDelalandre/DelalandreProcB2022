@@ -1,0 +1,12 @@
+"SITE" "drought_index"
+"GrandeDixence" 0.002869
+"Bever" 0
+"Davos" 0
+"Adelboden" 0
+"Huttwil" 0
+"Schwerin" 0.096368
+"Bern" 0
+"Cottbus" 0.150261
+"Basel" 0.038763
+"Schaffhausen" 0.022645
+"Sion" 0.267957

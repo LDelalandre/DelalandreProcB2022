@@ -2,33 +2,21 @@ library("dplyr")
 library("funrar")
 
 # Chose traits to use to compute the distinctiveness ####
-choice_traits_0<-function(traits){ # start from the table traits, and keep the variable below for computing the distinctiveness
-  # Here: both quantitative and qualitative traits are kept. colorRGB is considered as a factor, as well as Type.
+select_traits<-function(traits){ # start from the table traits, and keep the variable below for computing the distinctiveness
   rownames(traits)<-traits[,2]
   traits[,which((colnames(traits) %in% 
-                   c(    "Type"    ,                   "S"  ,                       
+                   c(    "S"  ,                       
                          "HMax"    ,                   "AMax"   ,                    "G"  ,                        "DDMin"  ,                   
-                         "WiTN"      ,                 "WiTX"       ,                "THot"   ,                    "TCo2Hot" ,                  
+                         "WiTN"      ,                 "WiTX"       ,                   
                          "DrTol"    ,                  "NTol"       ,                "Brow"         ,              "Ly"      ,                  
-                         "La"      ,                   "LQ"     ,                    "ImmT"    ,                   "ageMaturityForReproduction",
-                         "colorRGB"             )) )] 
+                         "La"      ,    "A1max" , "A2"          )) )] 
 }
 
-choice_traits_1<-function(traits){ # start from the table traits, and keep the variable below for computing the distinctiveness
-  rownames(traits)<-traits[,2]
-  traits[,which(!(colnames(traits) %in% c("Type","colorRGB","Name","SName","ageMaturityForReproduction","TCo2Hot","LQ","ImmT","THot")) )] 
-}
-
-
-choice_traits_2<-function(traits){
-  rownames(traits)<-traits[,2]
-  select(traits ,  HMax, G, DDMin, WiTX, DrTol, La, A1max ) 
-}
 
 
 # Compute distinctiveness #####
 traits_dist<-function(traits){
-  # Computes functional distinctiveness on all the species and adds a new colums with it on the input data frame (i.e. traits, here).
+  # Computes functional distinctiveness on all the species and adds a new columns with it on the input data frame (i.e. traits, here).
   dist_tot<-compute_dist_matrix(traits,metric='euclidean')
   tidy<-as.data.frame(rownames(traits)) # tidy format for computing distinctiveness in the fonction below
   colnames(tidy)<-"SName"
@@ -41,7 +29,7 @@ traits_dist<-function(traits){
 
 
 traits_dist_gower<-function(traits){ # using both quantitative and qualitative traits --> gower's distance (and not euclidean)
-  # Computes functional distinctiveness on all the species and adds a new colums with it on the input data frame (i.e. traits, here).
+  # Computes functional distinctiveness on all the species and adds a new columns with it on the input data frame (i.e. traits, here).
   dist_tot<-compute_dist_matrix(traits,metric='gower')
   tidy<-as.data.frame(rownames(traits)) # tidy format for computing distinctiveness in the fonction below
   colnames(tidy)<-"SName"
@@ -51,7 +39,6 @@ traits_dist_gower<-function(traits){ # using both quantitative and qualitative t
   traits$Di<-distinct_tot$Di
   traits
 }
-
 
 # Write command files for ForCEEPS ####
 
@@ -66,7 +53,7 @@ Cmd_decr<-function(distinct_tot,length,yearstobejumped,timestep,site){ # distinc
   distinct_tot$Id <- c(0:29)
   ord_decr<-distinct_tot[order(distinct_tot$Di,decreasing=TRUE),]$Id
   
-  sink(paste0("data/raw/cmd2_",site,"_decreasing.txt"))
+  sink(paste0("data/code_ForCEEPS_simulations/Cmd files/cmd2_",site,"_decreasing.txt"))
   cat("# Forceps script command file, format SimulationCommandReader2 (Xavier Morin)")
   cat("\n")
   cat("\n")
@@ -91,7 +78,7 @@ Cmd_incr<-function(distinct_tot,length,yearstobejumped,timestep,site){
   distinct_tot$Id <- c(0:29)
   ord_incr<-distinct_tot[order(distinct_tot$Di,decreasing=FALSE),]$Id
   
-  sink(paste0("data/raw/cmd2_",site,"_increasing.txt"))
+  sink(paste0("data/code_ForCEEPS_simulations/Cmd files/cmd2_",site,"_increasing.txt"))
   cat("# Forceps script command file, format SimulationCommandReader2 (Xavier Morin)")
   cat("\n")
   cat("\n")
@@ -118,7 +105,7 @@ Cmd_rand<-function(distinct_tot,length,yearstobejumped,timestep,site){
     set.seed(j)
     ord_random<-sample(c(0:29))
     
-    sink(paste0("data/raw/cmd2_",site,"_random_",j,".txt"))
+    sink(paste0("data/code_ForCEEPS_simulations/Cmd files/cmd2_",site,"_random_",j,".txt"))
     cat("# Forceps script command file, format SimulationCommandReader2 (Xavier Morin)")
     cat("\n")
     cat("\n")
@@ -141,7 +128,7 @@ Cmd_rand<-function(distinct_tot,length,yearstobejumped,timestep,site){
 
 Cmd_mono<-function(distinct_tot,length,yearstobejumped,timestep,site){  
   # Write Cmd file with species removed from the least to the most distinctive
-  sink(paste0("data/raw/cmd2_",site,"_monoculture.txt"))
+  sink(paste0("data/code_ForCEEPS_simulations/Cmd files/cmd2_",site,"_monoculture.txt"))
   cat("# Forceps script command file, format SimulationCommandReader2 (Xavier Morin)")
   cat("\n")
   cat("\n")
@@ -161,8 +148,9 @@ Cmd_mono<-function(distinct_tot,length,yearstobejumped,timestep,site){
   sink()
 }
 
-# Id of species in all the oders of removal ####
-# /!\ it does not give the same random orders as the previous code ?!
+# Id of species in all the orders of removal ####
+# It does not give the same random orders as the code I used for my simulations, 
+# even though I used "set.seed"... Anyway, it is just another random order.
 make_table_name_sname <- function(){
   distinct_tot <- read.table("data/raw/distinctiveness of the species.txt",header=T)
   distinct_tot$Id <- c(0:29)
@@ -174,15 +162,15 @@ make_table_name_sname <- function(){
     SPord[j+2] <- sample(c(0:29))
   }
   colnames(SPord) <- ORDER
-  write.table(SPord,"data/removal orders.txt",row.names=F)
+  write.table(SPord,"data/processed/Richness gradients orders.txt",row.names=F)
   
-  # Correspondence between species Id and species short name ####
+  # Correspondence between species Id and species short name
   name_sname <- 
-    read.table("data/Traits of the species_complete.txt",header=T) %>% 
+    read.table("data/raw/Traits of the species_complete.txt",header=T) %>% 
     select(Name,SName)
   
   name_sname$Id <- c(0:29) 
   name_sname$SName <- as.character(name_sname$SName)
-  write.table(name_sname,"data/correspondence_SName_Id.txt",row.names=F)
+  write.table(name_sname,"data/processed/correspondence_SName_Id.txt",row.names=F)
 }
 

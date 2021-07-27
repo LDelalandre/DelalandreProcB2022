@@ -1,0 +1,9 @@
+# Forceps script command file, format SimulationCommandReader2 (Xavier Morin)
+
+setupFileName = forceps.setup_Cottbus_Temp
+numberOfYearsToBeJumped = 999
+exportTimeStep = 100
+
+#siteFileName	climateFileName	numberOfYears	potentialSpeciesList	
+#forceps.Cottbus.site	forceps.climate.Cottbus.txt	2000	0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29
+forceps.Cottbus.site	forceps.climate.Cottbus+1.txt	2000	0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29

@@ -1,3 +1,22 @@
+.
+├── data 
+|	├── code_ForCEEPS_simulations # Code to perform simulations from the ForCEEPS model (hosted on Capsis: http://capsis.cirad.fr/capsis/help_en/forceeps, contact them for any informations about the platform)
+|	├── raw # Raw data. /!\ Contains raw simulation outputs, which are not hosted on the GitHub repository. Script to download them in "final/1.2. Import raw data.R"
+|	├── processed # Processed data. Available from GitHub. /!\ Only generated from: "final/2. Process data.R" if raw data have been downloaded and de-zipped. 
+|
+├── docs                    # Documentation files (alternatively `doc`)
+├── src                     # Source files (alternatively `lib` or `app`)
+├── test                    # Automated tests (alternatively `spec` or `tests`)
+├── tools                   # Tools and utilities
+├── LICENSE.txt
+└── README.txt
+
+
+A dire dans le README:
+
+Code for simulations forest dynamics is to be found in folder
+Output of ForCEEPS simulations
+
 To perform the analysis:
 
 \Final

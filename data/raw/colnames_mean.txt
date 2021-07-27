@@ -1,0 +1,3 @@
+date	nTrees(/ha)	totalBiomass(t/ha)	totalBasalArea(m2/ha)	LAI	droughtIndexAnnual	droughtIndexSeasonal	winterTMIN(deg)	GDDannual(deg.day)	GDDseasonal(deg.day)	nTreesMean	nTreesSD	biomassMean	biomassSD	basalAreaMean	basalAreaSD
+
+

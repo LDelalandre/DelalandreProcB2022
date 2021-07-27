@@ -1,0 +1,17 @@
+Under Windows:
+
+~\Capsis_dev$ (= se placer dans l'environnement de capsis)
+capsis -p script forceps.myscripts.SimulationPG data\forceps\pierre\cmd2_PG_Bern.txt
+
+capsis -p script forceps.myscripts.SimulationPG data\forceps\pierre\cmd2_PG_Bern_decreasing.txt
+capsis -p script forceps.myscripts.SimulationPG data\forceps\pierre\cmd2_PG_Bern_increasing.txt
+
+sh capsis.sh -p script : runs the capsis.sh script found in /
+forceps.myscripts.SimulationPG : call the simulation file found in /src/forceps/myscripts/SimulationPG.java .
+It reads, interprets and runs one simulation per line on the command file and defines the style of the export. 
+I would avoid any modification on this file and ask Francois or Xavier if modifications are needed.
+
+
+
+------
+capsis -p script forceps.myscripts.SimulationPG data\forceps\leo\cmd2_Bern_Temp.txt

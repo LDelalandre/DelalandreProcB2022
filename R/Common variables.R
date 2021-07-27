@@ -1,18 +1,10 @@
-# Libraries ####
-library("dplyr")
-library("magrittr")
-library(FactoMineR)
-library("funrar")
-library(ggplot2)
-library(tidyr)
-
 # TOTAL <- read.table("data/processed/specific_biom_prod_complete.txt",header=T)
 
 # Variables ####
-colnames_mean<-colnames(read.table("data/colnames_mean.txt",header=T)) # idem
-colnames_res<-colnames(read.table("data/colnames_res.txt", header=T))
-colnames_prod <- colnames(read.table("data/colnames_productivityScene.txt",header=T))
-colnames_prod2 <- colnames(read.table("data/colnames_productivity.txt",header=T))
+colnames_mean<-colnames(read.table("data/raw/colnames_mean.txt",header=T)) # idem
+colnames_res<-colnames(read.table("data/raw/colnames_res.txt", header=T))
+colnames_prod <- colnames(read.table("data/raw/colnames_productivityScene.txt",header=T))
+colnames_prod2 <- colnames(read.table("data/raw/colnames_productivity.txt",header=T))
 
 Nbpatches <- 50
 length <- 2000
@@ -26,7 +18,7 @@ threshold <- 0.001 # A species whose final biomass in a simulation is under this
 SITE <- c("GrandeDixence","Bever","Davos","Adelboden","Huttwil","Schwerin","Bern","Cottbus","Basel","Schaffhausen"
           ,"Sion")
 # ordered in growing temperature :
-Site_descr <- read.table("data/Site description.txt",header=T)
+Site_descr <- read.table("data/raw/Site description.txt",header=T)
 ord_temp <- as.character(Site_descr[order(Site_descr$Temp_moy),]$Site)
 
 ord_plots <- c("GrandeDixence","Bever","Davos","Basel","Cottbus","Schaffhausen","Schwerin","Sion",
