@@ -3,6 +3,7 @@ source("R/Common variables.R")
 source("R/Before simulations.R")
 source("R/comp_fct_dist.R")
 
+
 distinct_tot <- read.table("data/raw/distinctiveness of the species.txt",header = T)
 
 

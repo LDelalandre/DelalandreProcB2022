@@ -1,4 +1,4 @@
-## Specify the packages of interest
+## Specify the packages of interest ####
 packages = c("tidyverse", 
              "FactoMineR", "factoextra", # PCA computation
              "funrar", # Functional distinctiveness computation
@@ -17,3 +17,11 @@ package.check <- lapply(
     library(x, character.only = TRUE)
   }
 )
+
+
+# Complete folder structure ####
+
+# Create folder to export figures if it does not exist #
+if(file.exists(file.path("figures_tables"))==F){
+  dir.create(file.path("figures_tables"))  
+}
