@@ -25,7 +25,7 @@ Contains functions that are used in the other scripts.
 
 Scripts used for the article.
 
-NB: If you don not want to download raw data (~120 Go), you can start from data aggregated at the species level by avoiding the script "2. Process data.R" and jump directly to the following scripts.
+NB: If you don not want to download raw data (~120 Go), you can start from data aggregated at the species level by avoiding the script `2. Process data.R` and jump directly to the following scripts.
 
 #### analysis
 
@@ -38,7 +38,8 @@ Code to perform simulations using the ForCEEPS model, hosted on
 [Capsis](http://capsis.cirad.fr/capsis/help_en/forceeps) (contact them for any informations about the platform, how to install it on your machine, etc.).
 
 ##### > raw 
-Contains raw ForCEEPS simulation outputs. These are not hosted on the present GitHub repository. Script to download them is to be found in `final/1.2. Import raw data.R`, and will be available from [DRYAD] (https://datadryad.org/stash) soon.
+Contains raw ForCEEPS simulation outputs. These are not hosted on the present GitHub repository. 
+Script to download them is to be found in `final/2. Process data.R`, and datasets will be available from [DRYAD](https://datadryad.org/stash) as soon as they are compressed and uploaded.
 
 ##### > processed 
 

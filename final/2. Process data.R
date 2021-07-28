@@ -31,6 +31,8 @@ if (choice == "yes"){
   # Download compressed raw data from Zenodo ####
   download_zenodo("zenodo doi", path = "data/raw/Output_ForCEEPS") # change Zenodo doi when my data is uploaded
   # raw datasets are not available online yet. They should be uploaded on Dryad or Zenodo soon.
+  # or
+  dryad_files_download(ids, ...)
   
   # Extract files ####
   # Can take a few hours.

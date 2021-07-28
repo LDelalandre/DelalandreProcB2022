@@ -203,7 +203,7 @@ p <- ggdraw() +
   draw_plot_label(label = c("A", "B"), size = 15,
                   x = c(0, 0), y = c(1, 1-height_A))
 
-ggsave(filename = paste0("paper_2/Main figure_",measure,"_removal.png"), 
+ggsave(filename = paste0("figures_tables/Main figure_",measure,"_removal.png"), 
        plot = p,
        width = 20, 
        height = 30,
@@ -264,7 +264,7 @@ plot_AUC <- ggplot(data_AUC2,aes(x=Temp_moy,y=AUC,label=number))+
   ylab("Relative area under the curve (AUC)") +
   theme(strip.text = element_text(size=11))
 
-ggsave(filename = paste0("figures/Main figure 2_AUC.png"), 
+ggsave(filename = paste0("figures_tables/Main figure 2_AUC.png"), 
        plot = plot_AUC,
        width = 17, 
        height = 10,

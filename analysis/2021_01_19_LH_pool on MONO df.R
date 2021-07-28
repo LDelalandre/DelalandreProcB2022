@@ -17,18 +17,18 @@ bind_mono <- function(MONO_ALL,MONO1,ord,sim){
 EXTR_ORDERS <- NULL
 sit <- "Sion" # I can take any site
 
-cmd <- read.csv(paste0("data/raw/cmd2_",sit,"_increasing.txt"))
+cmd <- read.csv(paste0("data/code_ForCEEPS_simulations/Cmd files/cmd2_",sit,"_increasing.txt"))
 extracted <- extract_order(cmd)
 extr_split <- stringr::str_split(extracted, " ")
 EXTR_ORDERS <- rbind(EXTR_ORDERS, extr_split[[1]] )
 
-cmd <- read.csv(paste0("data/raw/cmd2_",sit,"_decreasing.txt"))
+cmd <- read.csv(paste0("data/code_ForCEEPS_simulations/Cmd files/cmd2_",sit,"_decreasing.txt"))
 extracted <- extract_order(cmd)
 extr_split <- stringr::str_split(extracted, " ")
 EXTR_ORDERS <- rbind(EXTR_ORDERS, extr_split[[1]] )
 
 for(j in c(1:30)){
-  cmd <- read.csv(paste0("data/raw/cmd2_",sit,"_random_",j,".txt"))
+  cmd <- read.csv(paste0("data/code_ForCEEPS_simulations/Cmd files/cmd2_",sit,"_random_",j,".txt"))
   extracted <- extract_order(cmd)
   extr_split <- stringr::str_split(extracted, " ")
   EXTR_ORDERS <- rbind(EXTR_ORDERS, extr_split[[1]] )

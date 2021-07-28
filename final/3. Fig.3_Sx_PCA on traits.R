@@ -11,7 +11,7 @@ distinct_tot <- read.table("data/raw/distinctiveness of the species.txt",header 
 # 1) Fig. 3: PCA and bootstrap ####
 # i) PCA ####
 traits<-read.table("data/raw/Traits of the species_complete.txt",header=T)
-c1<-choice_traits_1(traits) # data.frame with the traits of the species
+c1<-select_traits(traits) # data.frame with the traits of the species
 ACP1<-PCA(c1,graph=F)
 c1$Dim.1 <- ACP1$ind$coord[, 1] 
 c1$Dim.2 <- ACP1$ind$coord[, 2] 
@@ -48,7 +48,7 @@ plot_pca <-
   theme(axis.title=element_text(size=15),axis.text=element_text(size=15))
   
 
-ggsave("paper_2/PCA.png",plot_pca,height=26,width=33,units="cm",dpi="print")
+ggsave("figures_tables/PCA.png",plot_pca,height=26,width=33,units="cm",dpi="print")
 
 # ii) SENSITIVITY ANALYSIS: bootstrap ####
 traits<-read.table("data/raw/Traits of the species_complete.txt",header=T)
@@ -70,7 +70,7 @@ for (i in c(1:10000)){
   boot_cor <- cor(init_dist,boot_dist,method="spearman")
   corstat <- c(corstat,boot_cor)
 }
-write.table(corstat,"data/processed/bootstrap on Di correlations.txt",row.names=F,col.names=F)
+write.table(corstat,"figures_tables/bootstrap on Di correlations.txt",row.names=F,col.names=F)
 
 # Histogram of Spearman's rho for the bootstraps
 hist_bootstrap <- ggplot(data.frame(corstat),aes(x=corstat)) +
@@ -86,10 +86,10 @@ fig2 <- plot_pca +
   geom_text(  label="A", x=-4,y=3.9,size = 13,color = "black") +
   geom_text(  label="B", x=3.9,y=3.9,size = 13,color = "black")
 
-ggsave("figures/#figur_pca.png",fig2,height=26,width=29,units="cm",dpi="print")
+ggsave("figures_tables/Fig.3_pca.png",fig2,height=26,width=29,units="cm",dpi="print")
 
 
 # 2) Fig. Sx: Variance Explained ####
 percent_var <- factoextra::fviz_eig(ACP1, addlabels = TRUE, ylim = c(0, 30))
-ggsave(filename = "figures/#Fig. Sx.png",plot = percent_var)
+ggsave(filename = "figures/Fig.Sx_variance.png",plot = percent_var)
 
