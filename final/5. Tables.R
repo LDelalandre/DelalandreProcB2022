@@ -84,4 +84,3 @@ tabletrait <- table1 %>%
   kable( escape = F) %>%
   kable_styling("hover", full_width = F)
 cat(tabletrait, file = "figures_tables/Table x_Species trait values.doc")
-

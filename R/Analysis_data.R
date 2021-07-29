@@ -56,7 +56,7 @@ specific_productivities_mono <- function(site){
       prod_to_keep <- subset(prod,date %in% years_to_keep)
       meanpr <- mean(prod_to_keep$totProdBiomass_t_ha)
       productivity<-c(productivity,meanpr)
-      sd<-c(sd,sd(prod$totProdBiomass_t_ha)) 
+      # sd<-c(sd,sd(prod$totProdBiomass_t_ha)) 
       mean <- c(mean,mean(prod$totProdBiomass_t_ha))
     }
   }
@@ -64,10 +64,10 @@ specific_productivities_mono <- function(site){
   # specific_values: a data frame with final biomass of each monoculture, etc. 
   specific_values <- read.table("data/raw/distinctiveness of the species.txt",header=T)
   specific_values$monoculture <- productivity
-  specific_values$sd <- sd
+  # specific_values$sd <- sd
   specific_values$mean <- mean
-  specific_values$CV <- sd/mean
-  specific_values$TS <- mean/sd
+  # specific_values$CV <- sd/mean
+  # specific_values$TS <- mean/sd
   specific_values$Id <- c(0:29)
   specific_values$monoculture_relative <- specific_values$monoculture/ sum(specific_values$monoculture)
   specific_values

@@ -39,7 +39,7 @@ Code to perform simulations using the ForCEEPS model, hosted on
 
 ##### > raw 
 Contains raw ForCEEPS simulation outputs. These are not hosted on the present GitHub repository. 
-Script to download them is to be found in `final/2. Process data.R`, and datasets will be available from [DRYAD](https://datadryad.org/stash) as soon as they are compressed and uploaded.
+Script to download them from [Zenodo](https://zenodo.org/record/5145755) is to be found in `final/2. Process data.R`.
 
 ##### > processed 
 

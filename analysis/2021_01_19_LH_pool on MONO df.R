@@ -12,10 +12,11 @@ bind_mono <- function(MONO_ALL,MONO1,ord,sim){
   bind_rows(MONO_ALL,MONO1)
 }
 
+
 #___________________________________________________
 # Extract orders of removal from command files ####
 EXTR_ORDERS <- NULL
-sit <- "Sion" # I can take any site
+sit <- "Sion" # I can take any site, since orders of removal are the same for each
 
 cmd <- read.csv(paste0("data/code_ForCEEPS_simulations/Cmd files/cmd2_",sit,"_increasing.txt"))
 extracted <- extract_order(cmd)
