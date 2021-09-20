@@ -8,9 +8,9 @@ selected_traits<-select_traits(traits) # data.frame with the traits of the speci
 
 #________________________________________________________________________________
 # Table 2: Correlation prod-distinctiveness in monoculture ####
-# MIXTURES <- read.table("data/processed/LH_productivity_specific_every condition.txt",header=T) %>% 
-#   filter(persists_mixt==T)
-MIXTURES <- read.table("data/processed/productivity_monoculture_ALL sites.txt",header=T)
+PROD_mono <- read.table("data/processed/productivity_monoculture_ALL sites.txt",header=T) # productivity
+BIOM_mono <- read.table("data/processed/biomass_mono_ALL sites.txt",header=T) %>% 
+  rename(monoculture = monoculture.t.ha.) # biomass
 
 # correlation tests
 get_pval2 <- function(MIXT){
@@ -23,44 +23,69 @@ get_cor2 <- function(MIXT){
   cortest$estimate
 }
 
-
+# Biomass 
 COR <- NULL
 PVAL <- NULL
 for (sit in SITE){
-  M <- MIXTURES %>% 
+  M <- BIOM_mono %>% 
     filter(site == sit) 
   COR <- c(COR, as.numeric(get_cor2(M)) )
   PVAL <- c(PVAL,get_pval2(M))
   
 }
-
 correlations <- data.frame(site=SITE,cor=round(COR,digits=2),pval=PVAL) #pval=round(PVAL,digits=4))
-
-
-correlations2 <- correlations %>% 
-  mutate(p.value = map_dbl(pval,round,4)) %>% 
-  arrange(desc(cor)) %>% 
-  mutate(p.value = ifelse(p.value < 0.0001,
-                          "<0.0001",
+correlations_biom <- correlations %>% 
+  mutate(p.value = map_dbl(pval,round,2)) %>% 
+  select(-pval) %>% 
+  mutate(p.value = ifelse(p.value < 0.01,
+                          "<0.01",
                           p.value),)
 
+# Productivity 
+COR <- NULL
+PVAL <- NULL
+for (sit in SITE){
+  M <- PROD_mono %>% 
+    filter(site == sit) 
+  COR <- c(COR, as.numeric(get_cor2(M)) )
+  PVAL <- c(PVAL,get_pval2(M))
+  
+}
+correlations <- data.frame(site=SITE,cor=round(COR,digits=2),pval=PVAL) #pval=round(PVAL,digits=4))
+correlations_prod <- correlations %>% 
+  mutate(p.value = map_dbl(pval,round,2)) %>% 
+  select(-pval) %>% 
+  mutate(p.value = ifelse(p.value < 0.01,
+                          "<0.01",
+                          p.value),)
 
+correlations2 <- merge(correlations_biom,correlations_prod,by="site") %>% 
+  mutate(site = factor(site,levels=SITE)) %>%
+  arrange(site)
 
 tablecor <- correlations2 %>%
   transmute(
     Site = site,
-    Correlation = ifelse(p.value =="<0.0001",
-                         cell_spec(cor, bold = T),
-                         cell_spec(cor, bold=F)),
-    p.value = ifelse(p.value =="<0.0001",
-                     cell_spec(p.value, bold = T),
-                     cell_spec(p.value, bold=F)),
-    
+    Correlation = ifelse(p.value.x =="<0.01"|p.value.x =="0.01",
+                         cell_spec(cor.x, bold = T),
+                         cell_spec(cor.x, bold=F)),
+    p.value = ifelse(p.value.x =="<0.01"|p.value.x =="0.01",
+                     cell_spec(p.value.x, bold = T),
+                     cell_spec(p.value.x, bold=F)),
+    Correlation2 = ifelse(p.value.y =="<0.01"|p.value.y =="0.01",
+                          cell_spec(cor.y, bold = T),
+                          cell_spec(cor.y, bold=F)),
+    p.value2 = ifelse(p.value.y =="<0.01"|p.value.y =="0.01",
+                      cell_spec(p.value.y, bold = T),
+                      cell_spec(p.value.y, bold=F))
   ) %>%
   select(Site, everything()) %>%
-  kable( escape = F) %>%
-  kable_styling("hover", full_width = F)
-cat(tablecor, file = "figures_tables/Table_2_Corelation_prod_Di.doc")
+  kable( escape = F,
+         col.names = c("Site","Correlation","p.value","Correlation","p.value")) %>%
+  kable_styling("hover", full_width = F) %>% 
+  add_header_above(c(" " = 1,"Biomass" = 2,"Productivity" = 2))
+
+cat(tablecor, file = "figures_tables/Table_2_Correlation_prod_Di.doc")
 
 
 #________________________________________________________________________________

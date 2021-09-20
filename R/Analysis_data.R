@@ -14,8 +14,10 @@ persist <- function(sp,persistent.sp){
 specific_biomasses_mono <- function(site){
   # Extract the biomasse of each species in a monoculture and make a data frame with the following columns:
   #  Di       SName      monoculture(t/ha)         Id         monoculture_relative
-  
+  sp_id <- read.table("data/processed/correspondence_SName_Id.txt",header=T)
   biomass<-c()
+  Id <- c()
+  SName <- c()
   abundance <- c()
   mean_biom <- c()
   for(i in c(1:30)){
@@ -26,14 +28,16 @@ specific_biomasses_mono <- function(site){
     years_to_keep <- max(mean$date) - c(900,800,700,600,500,400,300,200,100,0)
     meanbiom <- mean(subset(mean,date %in% years_to_keep)$totalBiomass.t.ha.) # average of the last years
     biomass<-c(biomass,meanbiom) 
+    SName <- c(SName,sp_id[i,]$SName)
+    Id <- c(Id,sp_id[i,]$Id)
   }
   
+  sp_biomass <- data.frame('monoculture(t/ha)'= biomass,SName=SName,Id)
   # specific_values: a data frame with final biomass of each monoculture, etc. 
-  specific_values <- read.table("data/raw/distinctiveness of the species.txt",header=T)
-  specific_values$'monoculture(t/ha)' <- biomass
+  sp_di <- read.table("data/raw/distinctiveness of the species.txt",header=T)
+  specific_values <- merge(sp_biomass,sp_di,by="SName")
   # specific_values$mean_biom <- mean_biom
-  specific_values$Id <- c(0:29)
-  specific_values$monoculture_relative <- specific_values$'monoculture(t/ha)' / sum(specific_values$'monoculture(t/ha)')
+  specific_values$monoculture_relative <- specific_values$monoculture.t.ha. / sum(specific_values$monoculture.t.ha.)
   specific_values
 }
 
@@ -45,8 +49,9 @@ specific_productivities_mono <- function(site){
   # Rq: be careful of the way the folders and files are named.
   # NB: add productivity and sd(productivity) to it when I have the adequate simulations!
   productivity<-c()
-  sd<-c()
-  mean <- c()
+  SName <- c()
+  # sd<-c()
+  # mean <- c()
   for(number in c(1:30)){
     prod <- try(read.table(paste0("data/raw/Output_ForCEEPS/",site,"/output-cmd2_",site,"_monoculture.txt/forceps.",site,".site_",number,"_productivityScene.txt")),silent=T)
     if (class(prod) != "try-error"){# sometimes, the files are empty, and it returns an error message
@@ -57,18 +62,18 @@ specific_productivities_mono <- function(site){
       meanpr <- mean(prod_to_keep$totProdBiomass_t_ha)
       productivity<-c(productivity,meanpr)
       # sd<-c(sd,sd(prod$totProdBiomass_t_ha)) 
-      mean <- c(mean,mean(prod$totProdBiomass_t_ha))
+      # mean <- c(mean,mean(prod$totProdBiomass_t_ha))
+      SName <- c(SName,unique(prod$speciesShortName))
     }
   }
+  sp_prod <- data.frame(productivity,SName)
   
   # specific_values: a data frame with final biomass of each monoculture, etc. 
-  specific_values <- read.table("data/raw/distinctiveness of the species.txt",header=T)
-  specific_values$monoculture <- productivity
-  # specific_values$sd <- sd
-  specific_values$mean <- mean
-  # specific_values$CV <- sd/mean
-  # specific_values$TS <- mean/sd
-  specific_values$Id <- c(0:29)
+  sp_di <- read.table("data/raw/distinctiveness of the species.txt",header=T)
+  specific_values <- merge(sp_di,sp_prod,by="SName") %>% 
+    rename(monoculture=productivity)
+  sp_id <- read.table("data/processed/correspondence_SName_Id.txt",header=T)
+  specific_values <- merge(specific_values,sp_id,by="SName")
   specific_values$monoculture_relative <- specific_values$monoculture/ sum(specific_values$monoculture)
   specific_values
 }

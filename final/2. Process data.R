@@ -23,16 +23,13 @@ source("R/Monocultures_functions.R")
 # I) Import raw data ####
 # Ask the used if he/she wants to download raw data
 if (choice == "yes"){
-  # Check directory for ForCEEPS output is available, and create it if not ####
+  # Check if directory for ForCEEPS output is available, and create it if not ####
   if(file.exists(file.path("data/raw/Output_ForCEEPS"))==F){
     dir.create(file.path("data/raw/Output_ForCEEPS"))  
   }
   
   # Download compressed raw data from Zenodo ####
-  download_zenodo("https://zenodo.org/record/5145755", path = "data/raw/Output_ForCEEPS") # change Zenodo doi when my data is uploaded
-  # raw datasets are not available online yet. They should be uploaded on Dryad or Zenodo soon.
-  # or
-  dryad_files_download(ids, ...)
+  download_zenodo("https://zenodo.org/record/5145755", path = "data/raw/Output_ForCEEPS")
   
   # Extract files ####
   # Can take a few hours.
@@ -50,7 +47,7 @@ To do so, please go to scripts 3 to 6 in the folder \"final\".")
 # II) Process raw data ####
 # I raw data is downloaded and extracted, data processing will be performed
 if (file.exists(file.path("data/raw/Output_ForCEEPS"))==F){
-  cat("If you want to continue data processing, please download raw data from Zenodo (cf. script \"1.2. Import raw data\") \n
+  cat("If you want to continue data processing, please download raw data from Zenodo (cf. above \"I) Import raw data\") \n
     N.B. Raw data is heavy (120 Go) and can be long to download and unzip. \n
     An alternative option is to go on with the analysis from data aggregated at the species level. \n
     To do so, please go to scripts 3. to 6. in the folder \"final\".")

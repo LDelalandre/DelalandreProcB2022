@@ -15,7 +15,7 @@ threshold <- 0.001 # A species whose final biomass in a simulation is under this
 # biomass of the community is considered as absent from the community
 
 
-SITE <- c("GrandeDixence","Bever","Davos","Adelboden","Huttwil","Schwerin","Bern","Cottbus","Basel","Schaffhausen"
+SITE <- c("GrandeDixence","Bever","Davos","Adelboden","Huttwil","Bern","Schaffhausen","Basel","Schwerin","Cottbus"
           ,"Sion")
 # ordered in growing temperature :
 Site_descr <- read.table("data/raw/Site description.txt",header=T)
