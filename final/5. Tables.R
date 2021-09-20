@@ -8,17 +8,18 @@ selected_traits<-select_traits(traits) # data.frame with the traits of the speci
 
 #________________________________________________________________________________
 # Table 2: Correlation prod-distinctiveness in monoculture ####
-MIXTURES <- read.table("data/processed/LH_productivity_specific_every condition.txt",header=T) %>% 
-  filter(persists_mixt==T)
+# MIXTURES <- read.table("data/processed/LH_productivity_specific_every condition.txt",header=T) %>% 
+#   filter(persists_mixt==T)
+MIXTURES <- read.table("data/processed/productivity_monoculture_ALL sites.txt",header=T)
 
 # correlation tests
 get_pval2 <- function(MIXT){
-  cortest <- cor.test(MIXT$Di,MIXT$monoculture_t_ha,method="spearman",exact = FALSE)
+  cortest <- cor.test(MIXT$Di,MIXT$monoculture,method="spearman",exact = FALSE)
   cortest$p.value
 }
 
 get_cor2 <- function(MIXT){
-  cortest <- cor.test(MIXT$Di,MIXT$monoculture_t_ha,method="spearman",exact = FALSE)
+  cortest <- cor.test(MIXT$Di,MIXT$monoculture,method="spearman",exact = FALSE)
   cortest$estimate
 }
 
@@ -28,7 +29,7 @@ PVAL <- NULL
 for (sit in SITE){
   M <- MIXTURES %>% 
     filter(site == sit) 
-  COR <- c(COR,as.numeric(get_cor2(M)))
+  COR <- c(COR, as.numeric(get_cor2(M)) )
   PVAL <- c(PVAL,get_pval2(M))
   
 }

@@ -8,7 +8,7 @@ source("R/Common variables.R")
 # 1) Compute distinctiveness ####
 # First, I make a PCA, then I compute the distinctiveness on the first four axis
 traits<-read.table("data/raw/Traits of the species_complete.txt",header=T)
-c1<-choice_traits_1(traits) # data.frame with the traits of the species
+c1<-select_traits(traits) # data.frame with the traits of the species
 ACP1<-PCA(c1,graph=F)
 
 # position of the species on the first four axis

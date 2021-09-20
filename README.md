@@ -29,7 +29,7 @@ NB: If you don not want to download raw data (~120 Go), you can start from data 
 
 #### analysis
 
-Exploratory scripts, that were not retained for the publication.
+Exploratory scripts that were not retained for the publication.
 
 #### data 
 
@@ -51,4 +51,4 @@ only if raw data have been downloaded and de-zipped. Otherwise, you can start th
 
 ### Analyses performed
 
-The present scripts were used to perform forest succession simulations with the ForCEEPS forest gap model, extracts biomass and productivity outputs and analyses them. Simulations were performed along a broad environmental gradient, either in monocultures or in mixtures whereby species richness gradients enabled us to test the consequences of the presence or absence of functionally distinct species on ecosystem productivity. See the article for more details. 
+The present scripts were used to perform forest succession simulations with the ForCEEPS forest gap model, extract biomass and productivity outputs and analyse them. Simulations were performed along a broad environmental gradient, either in monocultures or in mixtures whereby species richness gradients enabled us to test the consequences of the presence or absence of functionally distinct species on ecosystem productivity. See the article for more details. 
