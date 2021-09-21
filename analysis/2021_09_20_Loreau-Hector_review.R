@@ -18,53 +18,48 @@ for (sit in SITE){
            SName = species) %>% 
     select(-c(persists,species))
   
-  
-  
   merged <- merge(MIXTURES,MONO_site, by = "SName" ) %>% 
     group_by(order,simul) %>% 
     rename(site = site.x)
   
-  merged_2 <- merged %>% 
+  LH1 <- merged %>% 
     rename(YOi=mixture_t_ha,Mi=monoculture) %>% 
     filter(Mi>0) %>% 
     group_by(site,order,simul) %>% 
     mutate(nb_sp_realized_pool=sum(persists_mixt)) %>% # nb of species in a community (which is a 2000-year-simul defined by a given regional pool of species)
-    mutate(nb_sp_regional_pool=31-simul)# For simul 30, N=31-30=1 sp. For simul 1, N=31-1=30 sp, etc.
+    mutate(nb_sp_regional_pool=31-simul) %>% # For simul 30, N=31-30=1 sp. For simul 1, N=31-1=30 sp, etc.
+    mutate(nb_sp_regional_pool2 = n()) # number of rows. Should be equal to nb_sp_regional_pool. It is.
   
-  
-  LHinfo <- merged_2 %>% 
+  LH2 <- LH1 %>% 
     mutate(YO=sum(YOi)) %>%
-    mutate(RYEi=1/nb_sp_regional_pool) %>% # /!\ I'm not sure which pool I should take here! 
-    # "N = number of species in the mixture" (Loreau and Hector, 2001).
-    # And: "RYEi = expected relative yield of species i in the mixture, which is simply its proportion seeded or planted"
-    # So it should be 1/regional pool, I guess.
+    mutate(RYEi=1/nb_sp_regional_pool) %>% 
+    # I divide by the regional pool, which represents the grains "seeed" (See Loreau & Hector, 2001, Nature): 
+    # "RYEi = expected relative yield of species i in the mixture, which is simply its proportion seeded or planted"  
     mutate(RYOi=YOi/Mi) %>%
     mutate(YEi=RYEi*Mi) %>%
     mutate(YE=sum(YEi)) %>%
     mutate(DeltaY=YO-YE) %>%
+    mutate(DeltaRYi=RYOi-RYEi)
     
-    mutate(DeltaRYi=RYOi-RYEi) %>%
-    mutate(Mavg = mean(Mi)) %>%
-    mutate(DeltaRYavg = mean(DeltaRYi)) %>%
+  LH3 <- LH2 %>% 
+    summarize(Selection = nb_sp_regional_pool * ( mean(DeltaRYi * Mi) - mean(DeltaRYi) * mean(Mi) ),
+              Complementarity = nb_sp_regional_pool * mean(DeltaRYi)*mean(Mi),
+              DeltaY = nb_sp_regional_pool * mean(DeltaRYi * Mi)) %>%  # idem as YO - YE
+    mutate(sum = Selection + Complementarity) %>% 
+    # NB: N is the number elements on which we sum (cf. Loreau & Hector, 2001), i.e. the "number of species seeded or planted"
     
-    mutate(Cpltarity = nb_sp_realized_pool*DeltaRYavg*Mavg) %>%
-    mutate(Selection = DeltaY - Cpltarity)%>%
-    
-    mutate(Selection2=nb_sp_realized_pool*cov(DeltaRYi,Mi)) %>% 
-    mutate(Relative_DeltaY = DeltaY/YE) %>% #/YO
-    mutate(Relative_Selection = Selection/YE) %>% #/YO
-    mutate(Relative_Complementarity = Cpltarity/YE) %>%  #/YO
     group_by(site,order,simul) %>%
-    summarize(DeltaY=mean(DeltaY),Cpltarity=mean(Cpltarity),Selection=mean(Selection))
+    summarize(DeltaY=mean(DeltaY),Complementarity=mean(Complementarity),Selection=mean(Selection),sum=mean(sum))
   
-  LH_all <- rbind(LH_all, LHinfo)
+  LH_all <- rbind(LH_all, LH3)
 }
 write.csv(LH_all,"data/processed/Loreau-Hector coefficients.csv",row.names = F)
 
 
 #_______________________________________________________________________________
 # PLots ####
-LH_all <- read.csv("data/processed/Loreau-Hector coefficients.csv")
+LH_all <- read.csv("data/processed/Loreau-Hector coefficients.csv") %>% 
+  mutate(site = factor(site,levels=SITE))
 
 
 # 15 species either Di or not ####
@@ -85,25 +80,25 @@ group_of_site <- function(site){
 # how many species 
 nbspecies <- 15
 
-for (nbspecies in c(1:20)){
+for (nbspecies in c(1:30)){
   # the most common
   commonx <- LH_all %>% 
-    filter(order == "decreasing" & simul == nbspecies+1) %>% 
+    filter(order == "decreasing" & simul == 30 - nbspecies+1) %>% 
     mutate(categ_site = map_chr(site,group_of_site))
   # the most distinct
   distinctx <- LH_all %>% 
-    filter(order == "increasing" & simul == nbspecies+1) %>% 
+    filter(order == "increasing" & simul == 30 - nbspecies+1) %>% 
     mutate(categ_site = map_chr(site,group_of_site))
   
   grouped_commonx <- commonx %>% 
     ungroup() %>% 
     group_by(categ_site) %>%
-    summarize_at(.vars = vars("DeltaY","Cpltarity","Selection"), .funs = ~ mean(.),na.rm = T)
+    summarize_at(.vars = vars("DeltaY","Complementarity","Selection"), .funs = ~ mean(.),na.rm = T)
   
   grouped_distinctx <- distinctx%>% 
     ungroup() %>% 
     group_by(categ_site) %>%
-    summarize_at(.vars = vars("DeltaY","Cpltarity","Selection"), .funs = ~ mean(.),na.rm = T)
+    summarize_at(.vars = vars("DeltaY","Complementarity","Selection"), .funs = ~ mean(.),na.rm = T)
   
   
   
@@ -123,7 +118,7 @@ for (nbspecies in c(1:20)){
     mutate(SpPool = "Distinct")
   
   plot <- rbind(a,b) %>% 
-    mutate(effect = factor(effect, levels = c("DeltaY","Cpltarity","Selection"))) %>% 
+    mutate(effect = factor(effect, levels = c("DeltaY","Complementarity","Selection"))) %>% 
     mutate(categ_site = factor( categ_site, levels = c("cold","warm-wet","warm","warm-dry"))) %>% 
     filter(effect!="DeltaY") %>% 
     ggplot(aes(x=categ_site,y=value,fill=effect)) +
@@ -140,3 +135,44 @@ for (nbspecies in c(1:20)){
 
 
 
+# Search possible analyses ####
+sim = 11
+metrics <- "DeltaY"
+for (sim in c(30:1)){
+  toplot <- LH_all %>% 
+    filter(simul==sim & order %in% c("decreasing","increasing")) %>% 
+    mutate(order = factor(order,levels=c("increasing","decreasing")))
+  
+  ggplot(toplot,aes_string(x="order",y=metrics, group = 1, colour = "order")) +
+    geom_line(col = "black") +
+    geom_point(size=3) +
+    facet_wrap(~site) +
+    scale_x_discrete(labels= c("Distinct lost first","Common lost first")) +
+    theme(axis.text.x = element_blank(),
+          axis.ticks.x=element_blank(),
+          axis.title.x=element_blank()) +
+    scale_colour_discrete(labels = c('Distinct species', 'Common species'),
+                          name="") +
+    ggtitle(paste(metrics,"; number of species = ",30-sim+1)) +
+    ggsave(paste0("figures/2021_09_21_Loreau-Hector/",metrics,"_N=",30-sim+1,".png"))
+}
+
+
+
+metrics <- "Selection"
+toplot <- LH_all %>% 
+  filter(simul %in% c(10:20)) %>% 
+  filter(order %in% c("decreasing","increasing")) %>% 
+  mutate(order = factor(order,levels=c("increasing","decreasing")))
+
+ggplot(toplot,aes_string(x="order",y=metrics, group = 1, colour = "order")) +
+  # geom_line(col = "black") +
+  geom_point(size=3) +
+  facet_wrap(~site) +
+  scale_x_discrete(labels= c("Distinct lost first","Common lost first")) +
+  theme(axis.text.x = element_blank(),
+        axis.ticks.x=element_blank(),
+        axis.title.x=element_blank()) +
+  scale_colour_discrete(labels = c('Distinct species', 'Common species'),
+                        name="") +
+  ggtitle(paste(metrics,"; number of species = ",30-sim+1))
