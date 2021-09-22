@@ -15,17 +15,17 @@ table_functClust <- function(site){
   dat <- data.frame(matrix(nrow=0,ncol=33))
   colnames(dat) <- c("assemblage",as.character(read.table("data/raw/distinctiveness of the species.txt",header = T)$SName),"biomass","productivity")
   j <- 1 # number of the assemblage = position (line) in the data.frame dat
-  table <- read.table(paste0("data/processed/biomass_specific_",site,"_with monocultures.txt"),header=T)
-  table_mono <- read.table(paste0("data/processed/biomass_monoculture_",site,".txt"),header=T)
-  prod <- read.table(paste0("data/processed/productivity_specific_",site,"_with monocultures.txt"),header=T)
-  prod_mono <- read.table(paste0("data/processed/productivity_monoculture_",site,".txt"),header=T)
+  table <- read.table(paste0("mass grave/data processed 2020_28_12/biomass_specific_",site,"_with monocultures.txt"),header=T)
+  table_mono <- read.table(paste0("mass grave/data processed 2020_28_12/biomass_monoculture_",site,".txt"),header=T)
+  prod <- read.table(paste0("mass grave/data processed 2020_28_12/productivity_specific_",site,"_with monocultures.txt"),header=T)
+  prod_mono <- read.table(paste0("mass grave/data processed 2020_28_12/productivity_monoculture_",site,".txt"),header=T)
   for (order in ORDER){
     a <- order
     sub1 <- subset(table,order==a)
     pr1 <- subset(prod,order==a)
     for (i in unique(sub1$simul)){ # the removal experiments where there were species remaining at the end
-      sub <- subset(sub1, simul==i)
-      pr <- subset(pr1,simul==i)
+      sub <- subset(sub1, simul==i) # biomass of each species in one site, one order, one simul
+      pr <- subset(pr1,simul==i) # productivity of each species in one site, one order, one simul
       
       dat[j,]$assemblage <- paste0(site,"_",order,"_",i)
       dat[j,]$biomass <- sum(sub$mixture.t.ha)
@@ -58,7 +58,7 @@ for (site in SITE){
 # functClust analysis ####
 site <- "Bever"
 
-dat <- read.table(paste0("data/processed/functclust/functClust_data_",site,".txt"),header=T)
+dat <- read.table(paste0("mass grave/data processed 2020_28_12/functclust/functClust_data_",site,".txt"),header=T)
 nbElt <- 30
 dat <- distinct(dat) # Romove duplicated rows.
 
@@ -86,8 +86,8 @@ load( paste0("data/processed/functclust/",site,".RData"))
 # Plot Distinctiveness f(functional cluster)
 
 # Composition and interaction effects ####
-mOccur <- as.matrix(select(dat2,-c(assemblage,biomass)))
-fobs <- as.vector(select(dat2,biomass))
+mOccur <- as.matrix(select(dat,-c(assemblage,biomass)))
+fobs <- as.vector(select(dat,biomass))
 mult <- multiplicative_decomposition(fobs, mOccur, rm.mono = F)
 part_effects <- cbind(mult$alpha,mult$beta)
 colnames(part_effects) <- c("interaction","composition")

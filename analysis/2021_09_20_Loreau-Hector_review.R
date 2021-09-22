@@ -42,18 +42,26 @@ for (sit in SITE){
     mutate(DeltaRYi=RYOi-RYEi)
     
   LH3 <- LH2 %>% 
-    summarize(Selection = nb_sp_regional_pool * ( mean(DeltaRYi * Mi) - mean(DeltaRYi) * mean(Mi) ),
+    mutate(Selection = nb_sp_regional_pool * ( mean(DeltaRYi * Mi) - mean(DeltaRYi) * mean(Mi) ),
               Complementarity = nb_sp_regional_pool * mean(DeltaRYi)*mean(Mi),
               DeltaY = nb_sp_regional_pool * mean(DeltaRYi * Mi)) %>%  # idem as YO - YE
     mutate(sum = Selection + Complementarity) %>% 
     # NB: N is the number elements on which we sum (cf. Loreau & Hector, 2001), i.e. the "number of species seeded or planted"
     
-    group_by(site,order,simul) %>%
-    summarize(DeltaY=mean(DeltaY),Complementarity=mean(Complementarity),Selection=mean(Selection),sum=mean(sum))
+    group_by(site,order,simul)
+  
+  LH4 <- LH3 %>% 
+    select(SName,site,order,simul,persists_mono,Mi,persists_mixt,YOi,DeltaY,Selection,Complementarity)
   
   LH_all <- rbind(LH_all, LH3)
 }
-write.csv(LH_all,"data/processed/Loreau-Hector coefficients.csv",row.names = F)
+
+write.csv(LH_all,"data/processed/Loreau-Hector coefficients_per species.csv",row.names = F)
+
+LH_all2 <- LH_all %>% 
+  summarize(DeltaY=mean(DeltaY),Complementarity=mean(Complementarity),Selection=mean(Selection),sum=mean(sum))
+
+write.csv(LH_all2,"data/processed/Loreau-Hector coefficients.csv",row.names = F)
 
 
 #_______________________________________________________________________________
