@@ -103,7 +103,7 @@ for (site in SITE){
     
     res1 <- fclust(dat3,nbElt)
     
-    save(res1, file = paste0("data/processed/functclust/",site,"_",property,".RData"))
+    save(res1, file = paste0("figures/functClust/functclust/",site,"_",property,".RData"))
   }
 }
 
@@ -114,7 +114,7 @@ for (site in SITE){
 # PLot ####
 for (site in SITE[4:11]){
   for (property in PROPERTIES){
-    load( paste0("data/processed/functclust/",site,"_",property,".RData"))
+    load( paste0("figures/functClust/functclust/",site,"_",property,".RData"))
     
     nbcl=2
     pdf(paste0("figures/functClust/functClust_",site,"_nbcl=",nbcl,"_",property ,".pdf"),width=10)
