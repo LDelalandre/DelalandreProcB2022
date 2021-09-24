@@ -12,9 +12,6 @@ if(file.exists(file.path("data/processed/functClust"))==F){
 LH_all_per_sp <- read.csv("data/processed/Loreau-Hector coefficients_per species.csv") %>% 
   mutate(site = factor(site,levels=SITE))
 
-nb_sp <- 15
-LH_all_x_sp <- LH_all_per_sp %>% filter(simul == 30-nb_sp+1)
-
 # Table format functClust data
 # Je veux :
 #   - lire les propriétés écosystémiques finales (cf. mes autres codes R)
@@ -75,9 +72,20 @@ for (site in SITE){
   write.table(dat,paste0("data/processed/functClust/functClust_data_",site,".txt"),sep="\t",row.names=F)
 }
 
+# for a given number of species
+nb_sp <- 13
+LH_all_x_sp <- LH_all_per_sp %>% filter(simul == 30-nb_sp+1)
 for (site in SITE){
   dat <- table_functClust(LH_all_x_sp,site)
   write.table(dat,paste0("data/processed/functClust/nb_sp_",nb_sp,"functClust_data_",site,".txt"),sep="\t",row.names=F)
+}
+
+nb_sp2 <- c(13,14,15,16,17,18,19)
+sim <- 30-nb_sp2+1
+LH_all_x_sp2 <- LH_all_per_sp %>% filter(simul %in% sim)
+for (site in SITE){
+  dat <- table_functClust(LH_all_x_sp2,site)
+  write.table(dat,paste0("data/processed/functClust/nb_sp_12_to_18functClust_data_",site,".txt"),sep="\t",row.names=F)
 }
 
 #_______________________________________________________________________________
@@ -119,11 +127,15 @@ for (site in SITE){
   dat_all <- read.table(paste0("data/processed/functclust/functClust_data_",site,".txt"),header=T)
   for (property in PROPERTIES){
     res1 <- clean_dat_and_perform_functional_clustering(dat_all,property)
-    fclust_write(res1, filename = paste0("figures/functClust/functclust/",site,"_",property))
+    fclust_write(res1, filename = paste0("figures/functClust/functclust/all_species_numbers",site,"_",property))
   }
 }
 
-nb_sp <- 15
+# given number of species
+nb_sp <- 14
+if(file.exists(file.path(paste0("figures/functClust/functClust/",nb_sp,"_species")))==F){
+  dir.create(file.path(paste0("figures/functClust/functClust/",nb_sp,"_species")))  
+}
 for (site in SITE){
   # x species (here nb_sp = 15)
   dat_xsp <- read.table(paste0("data/processed/functClust/nb_sp_",nb_sp,"functClust_data_",site,".txt"),header=T)
@@ -133,7 +145,18 @@ for (site in SITE){
   }
 }
 
-
+# 12 to 18 species
+# given number of species
+nb_sp2 <- c(13,14,15,16,17,18,19)
+sim <- 30-nb_sp2+1
+for (site in SITE){
+  # x species (here nb_sp = 15)
+  dat_xsp <- read.table(paste0("data/processed/functClust/nb_sp_12_to_18functClust_data_",site,".txt"),header=T)
+  for (property in PROPERTIES){
+    res1 <- clean_dat_and_perform_functional_clustering(dat_xsp,property)
+    fclust_write(res1, filename = paste0("figures/functClust/functclust/12_to_18_species/",site,"_",property))
+  }
+}
 
 #________________________________________________________________________________________
 # III) functClust pdf pLots ####
