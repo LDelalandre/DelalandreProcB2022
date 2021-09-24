@@ -7,10 +7,15 @@ if(file.exists(file.path("data/processed/functClust"))==F){
   dir.create(file.path("data/processed/functClust"))  
 }
 
+#_________________________________________________________________________________
+# I) Read Loreau-Hector and shape it as required from functClust ####
 LH_all_per_sp <- read.csv("data/processed/Loreau-Hector coefficients_per species.csv") %>% 
   mutate(site = factor(site,levels=SITE))
 
-# Table format functClust data ####
+nb_sp <- 15
+LH_all_x_sp <- LH_all_per_sp %>% filter(simul == 30-nb_sp+1)
+
+# Table format functClust data
 # Je veux :
 #   - lire les propriétés écosystémiques finales (cf. mes autres codes R)
 #   - savoir les espèces présentes (au-delà d'un seuil) finales
@@ -70,13 +75,16 @@ for (site in SITE){
   write.table(dat,paste0("data/processed/functClust/functClust_data_",site,".txt"),sep="\t",row.names=F)
 }
 
+for (site in SITE){
+  dat <- table_functClust(LH_all_x_sp,site)
+  write.table(dat,paste0("data/processed/functClust/nb_sp_",nb_sp,"functClust_data_",site,".txt"),sep="\t",row.names=F)
+}
+
 #_______________________________________________________________________________
-# functClust analysis ####
+# II) functClust analysis ####
 PROPERTIES <- c("productivity","DeltaY","Selection","Complementarity")
 
-for (site in SITE){
-  dat <- read.table(paste0("data/processed/functclust/functClust_data_",site,".txt"),header=T)
-  
+clean_dat_and_perform_functional_clustering <- function(dat,property){
   # Number of species persisting
   dat <- distinct(dat) # Remove duplicated rows.
   zeros <- which(colSums(dat[,-c(1,32,33,34,35)])==0)
@@ -85,14 +93,14 @@ for (site in SITE){
   } else {
     dat2 <- dat
   }
- 
+  
   nbElt <- dat2 %>% 
     select(-c("assemblage","productivity","DeltaY","Selection","Complementarity")) %>% 
     colnames() %>% 
     length()
   
   # Chose the ecosystem property to study
-  for (property in PROPERTIES){
+
     focus <- which(PROPERTIES == property)
     properties_discarded <- PROPERTIES[-focus]
     # I remove the other 3 properties
@@ -102,19 +110,37 @@ for (site in SITE){
              -rlang::UQ(sym(properties_discarded[3])) )
     
     res1 <- fclust(dat3,nbElt)
-    
-    save(res1, file = paste0("figures/functClust/functclust/",site,"_",property,".RData"))
+    res1
+}
+
+
+# All the numbers of species
+for (site in SITE){
+  dat_all <- read.table(paste0("data/processed/functclust/functClust_data_",site,".txt"),header=T)
+  for (property in PROPERTIES){
+    res1 <- clean_dat_and_perform_functional_clustering(dat_all,property)
+    fclust_write(res1, filename = paste0("figures/functClust/functclust/",site,"_",property))
+  }
+}
+
+nb_sp <- 15
+for (site in SITE){
+  # x species (here nb_sp = 15)
+  dat_xsp <- read.table(paste0("data/processed/functClust/nb_sp_",nb_sp,"functClust_data_",site,".txt"),header=T)
+  for (property in PROPERTIES){
+    res1 <- clean_dat_and_perform_functional_clustering(dat_xsp,property)
+    fclust_write(res1, filename = paste0("figures/functClust/functclust/",nb_sp,"_species/",site,"_",property))
   }
 }
 
 
 
-
-
-# PLot ####
+#________________________________________________________________________________________
+# III) functClust pdf pLots ####
 for (site in SITE[4:11]){
   for (property in PROPERTIES){
-    load( paste0("figures/functClust/functclust/",site,"_",property,".RData"))
+    # load( paste0("figures/functClust/functclust/RData/",site,"_",property,".RData"))
+    res1 <- fclust_read(filename = paste0("figures/functClust/functclust/",site,"_",property))
     
     nbcl=2
     pdf(paste0("figures/functClust/functClust_",site,"_nbcl=",nbcl,"_",property ,".pdf"),width=10)
