@@ -195,7 +195,7 @@ if (file.exists(file.path("data/raw/Output_ForCEEPS"))==F){
   for (sit in SITE){
     prod <- 
       read.table(paste0("data/processed/productivity_specific_",sit,".txt"),header=T) %>% 
-      filter(persists==T) %>% # keep species above biomass threshold
+      # filter(persists==T) %>% # keep species above biomass threshold
       group_by(site,order,simul) %>% 
       summarize(productivity=sum(mixture_t_ha)) %>% # compute community-level productivity
       spread(order,productivity) # spread the data frame to plot it

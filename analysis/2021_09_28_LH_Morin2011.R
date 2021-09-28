@@ -57,6 +57,12 @@ LH_all_per_sp %>%
   summarize(n=n())
 # --> Il y a des espèces qui persistent en mélange mais pas en mono.
 
+rarecases <- LH_all_per_sp %>% 
+  filter(persists_mixt == T & persists_mono == F)
+rarecases %>% 
+  pull(site) %>% 
+  unique()
+
 LH_all_per_sp %>% 
   filter(site=="GrandeDixence"&order=="random_21"&simul==19) %>% 
   filter(persists_mixt==T)
