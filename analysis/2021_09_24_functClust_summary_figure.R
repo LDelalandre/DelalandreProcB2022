@@ -9,7 +9,7 @@ site <- "Bern"
 property <- "Complementarity"
 nbCl <- 2 # number of clusters of species
 siteNb <- 0 # to save pots in the good order
-nb_sp <- 14 # number of species 
+nb_sp <- 30 # number of species 
 
 for (site in SITE){
   siteNb <- siteNb + 1

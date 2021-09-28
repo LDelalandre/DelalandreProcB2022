@@ -35,7 +35,9 @@ table_functClust <- function(LH_all_per_sp,sit){
     df_LH_order <- subset(df_LH,order==a)
 
     for (i in df_LH_order$simul %>% unique() %>% sort() ){ # the removal experiments where there were species remaining at the end
-      sub <- subset(df_LH_order, simul==i) 
+      sub <- subset(df_LH_order, simul==i) %>% 
+        filter(persists_mixt == T) # NB SPECIES THAT ARE PRESENT IN THE SIMUL ARE ABOVE BIOMASS THRESHOLD
+      # NB2: I did not filter on species persisting in mono and mixt to performe Loreau-Hector analysis.
 
       dat[j,]$assemblage <- paste0(site,"_",order,"_",i) # paste order and simul (an assemblage is a simul)
       
@@ -44,7 +46,17 @@ table_functClust <- function(LH_all_per_sp,sit){
       dat[j,]$Selection <- unique(sub$Selection)
       dat[j,]$Complementarity <- unique(sub$Complementarity)
       
-      dat[j,which(!(colnames(dat) %in% c(as.character(sub$SName),"assemblage","productivity","DeltaY","Selection","Complementarity") ))] <- 0
+      # all the species that we saw at the end of the simul are considered persistent (bad)
+      # spnames <- as.character(sub$SName) 
+      
+      # only species above biomass threshold are considered persistent (better, I think)
+      spnames <- sub %>% 
+        pull(SName) %>% 
+        as.character
+      
+      
+        
+      dat[j,which(!(colnames(dat) %in% c(spnames,"assemblage","productivity","DeltaY","Selection","Complementarity") ))] <- 0
       dat[j,which(colnames(dat) %in% sub$SName)] <- 1
       
       j <- j+1 # current position in the data.frame dat.
@@ -73,7 +85,7 @@ for (site in SITE){
 }
 
 # for a given number of species
-nb_sp <- 13
+nb_sp <- 30
 LH_all_x_sp <- LH_all_per_sp %>% filter(simul == 30-nb_sp+1)
 for (site in SITE){
   dat <- table_functClust(LH_all_x_sp,site)
@@ -132,7 +144,7 @@ for (site in SITE){
 }
 
 # given number of species
-nb_sp <- 14
+nb_sp <- 30
 if(file.exists(file.path(paste0("figures/functClust/functClust/",nb_sp,"_species")))==F){
   dir.create(file.path(paste0("figures/functClust/functClust/",nb_sp,"_species")))  
 }

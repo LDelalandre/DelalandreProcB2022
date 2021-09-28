@@ -93,3 +93,52 @@ ggsave("figures_tables/Fig.3_pca.png",fig2,height=26,width=29,units="cm",dpi="pr
 percent_var <- factoextra::fviz_eig(ACP1, addlabels = TRUE, ylim = c(0, 30))
 ggsave(filename = "figures/Fig.Sx_variance.png",plot = percent_var)
 
+
+# 3) Fig.Sx: Richness ####
+LH_ALL <- read.csv("data/processed/Loreau-Hector coefficients_per species.csv")
+
+per_mono <- LH_ALL %>% 
+  filter(simul==1&order=="random_3") %>% # With 30 species
+  group_by(site) %>% 
+  filter(persists_mono==T) %>%
+  summarize(RS_mono=n()) %>% 
+  arrange(factor(site, levels = SITE))
+
+per_mixt <- LH_ALL %>% 
+  filter(simul==1&order=="random_3") %>% # With 30 species
+  group_by(site) %>% 
+  filter(persists_mixt==T) %>%
+  summarize(RS_mixt=n()) %>% 
+  arrange(factor(site, levels = SITE)) 
+
+richness <- merge(per_mono,per_mixt,by="site") %>% 
+  arrange(factor(site, levels = SITE)) %>% 
+  mutate(site=factor(site, levels=site))
+ggplot(richness,aes(x=site,y=RS_mono))+
+  geom_histogram(stat="identity",alpha=0.2) +
+  theme(axis.text.x = element_text(angle = 60)) +
+  geom_point( aes(x=site,y=RS_mixt),stat="identity")+
+  ylab("Richness") +
+  ggsave("figures_tables/Richness.png")
+
+
+# 4) Fig.Sx: temporal change in biomass
+# mean biomass in time
+
+MEAN <- NULL
+for (site in SITE){
+  mean <- read.table(paste0("data/raw/Output_ForCEEPS/",site,"/output-cmd2_",site,"_decreasing.txt/forceps.",site,".site_1_mean.txt"))
+  colnames(mean) <- colnames_mean
+  mean2 <- mean %>%
+    select(date,nTrees..ha.,totalBiomass.t.ha.) %>% 
+    mutate(date = date-1950)
+  mean2$site <- site
+  MEAN <- rbind(MEAN,mean2)
+}
+
+MEAN2 <- MEAN %>% 
+  mutate(site=factor(site, levels = SITE))
+ggplot(MEAN2,aes(x=date,y=totalBiomass.t.ha.)) +
+  facet_wrap(~site)+
+  geom_line() +
+  ggsave("figures_tables/Temporal_evolution_biomass.png",height=9,width=11)

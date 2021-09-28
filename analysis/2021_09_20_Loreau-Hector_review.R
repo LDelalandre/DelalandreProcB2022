@@ -28,7 +28,7 @@ for (sit in SITE){
     group_by(site,order,simul) %>% 
     mutate(nb_sp_realized_pool=sum(persists_mixt)) %>% # nb of species in a community (which is a 2000-year-simul defined by a given regional pool of species)
     mutate(nb_sp_regional_pool=31-simul) %>% # For simul 30, N=31-30=1 sp. For simul 1, N=31-1=30 sp, etc.
-    mutate(nb_sp_regional_pool2 = n()) # number of rows. Should be equal to nb_sp_regional_pool. It is.
+    mutate(nb_sp_local_pool = n()) # number of rows. cf. Chauvet 2017.
   
   LH2 <- LH1 %>% 
     mutate(YO=sum(YOi)) %>%
@@ -51,7 +51,7 @@ for (sit in SITE){
     group_by(site,order,simul)
   
   LH4 <- LH3 %>% 
-    select(SName,site,order,simul,persists_mono,Mi,persists_mixt,YOi,DeltaY,Selection,Complementarity)
+    select(SName,site,order,simul,persists_mono,Mi,persists_mixt,YOi,YE,DeltaY,Selection,Complementarity)
   
   LH_all <- rbind(LH_all, LH3)
 }
@@ -59,7 +59,8 @@ for (sit in SITE){
 write.csv(LH_all,"data/processed/Loreau-Hector coefficients_per species.csv",row.names = F)
 
 LH_all2 <- LH_all %>% 
-  summarize(DeltaY=mean(DeltaY),Complementarity=mean(Complementarity),Selection=mean(Selection),sum=mean(sum))
+  group_by(site,order,simul) %>% 
+  summarize(YO = mean(YO),YE = mean(YE),DeltaY=mean(DeltaY),Complementarity=mean(Complementarity),Selection=mean(Selection),sum=mean(sum),)
 
 write.csv(LH_all2,"data/processed/Loreau-Hector coefficients.csv",row.names = F)
 
