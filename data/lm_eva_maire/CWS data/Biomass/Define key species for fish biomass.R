@@ -23,19 +23,19 @@ require(MuMIn)
 require(lme4)
 
 # setting working directory
-my_path<-"" #  <= "Biomass" folder
-setwd(my_path)
+# my_path<-"" #  <= "Biomass" folder
+# setwd(my_path)
 
 ###################################################################################################################################
 # LOADING AND PREPARING DATA
 # (i) Loading complete dataset of environnemental and socioeconomic drivers, fish biomass and species richness
 # All the quantitative covariables are standardised. 
 
-load("Biomass_data.Rdata")
+load("data/lm_eva_maire/CWS data/Biomass/Biomass_data.Rdata")
 nrow(Biomass_data) #1824 reefs are used in the analysis
 
 # (ii) Loading the matrix which describes presence/absence of fish species for each reef: Reefs x Species
-load("presence_fish_species.Rdata")
+load("data/lm_eva_maire/CWS data/Biomass/presence_fish_species.Rdata")
 
 # We excluded fish species present on less than 1% of the reefs (i.e. 18 reefs for fish biomass dataset)
 limit <- round(0.01*nrow(Biomass_data),0)
@@ -114,7 +114,7 @@ nrow(Summary_key_species)
 Summary_key_species
 
 #Functional traits of key species
-load("Functional_traits.Rdata")
+load("data/lm_eva_maire/CWS data/Biomass/Functional_traits.Rdata")
 
 Functional_traits_key_species <- Functional_traits[which(Functional_traits$Species_code%in%rownames(Summary_key_species)==T),]
 Functional_traits_key_species #see Supplementary Material for more details on functional traits

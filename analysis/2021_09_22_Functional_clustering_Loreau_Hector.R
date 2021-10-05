@@ -35,11 +35,11 @@ table_functClust <- function(LH_all_per_sp,sit){
     df_LH_order <- subset(df_LH,order==a)
 
     for (i in df_LH_order$simul %>% unique() %>% sort() ){ # the removal experiments where there were species remaining at the end
-      sub <- subset(df_LH_order, simul==i) %>% 
-        filter(persists_mixt == T) # NB SPECIES THAT ARE PRESENT IN THE SIMUL ARE ABOVE BIOMASS THRESHOLD
+      sub <- subset(df_LH_order, simul==i) 
+        # filter(persists_mixt == T) # NB SPECIES THAT ARE PRESENT IN THE SIMUL ARE ABOVE BIOMASS THRESHOLD
       # NB2: I did not filter on species persisting in mono and mixt to performe Loreau-Hector analysis.
 
-      dat[j,]$assemblage <- paste0(site,"_",order,"_",i) # paste order and simul (an assemblage is a simul)
+      dat[j,]$assemblage <- paste0(sit,"_",order,"_",i) # paste order and simul (an assemblage is a simul)
       
       dat[j,]$productivity <- sum(sub$YOi)
       dat[j,]$DeltaY <- unique(sub$DeltaY)

@@ -16,6 +16,7 @@ paper_2
 Stage M2
 TEST random orders/
 TEST zip
+data/processed/maire
 *.csv
 *.docx
 *.xlsx
