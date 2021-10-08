@@ -69,7 +69,7 @@ for (site in SITE){
 # II) Analyses ####
 infer_key_species <- function(occurrence_ppty){
   # Candidate species ####
-  max <- dim(occurrence_ppty)[2]-4
+  max <- dim(occurrence_ppty)[2]-5 # /!\ SI JE REGARDE A RICHESSE CONSTANTE IL FAUT METTRE -4 !!!!!!
   Moccur <- occurrence_ppty[,c(4: max )]
   
   limit <- round(0.1*nrow(Moccur),0) # 10%
@@ -84,9 +84,23 @@ infer_key_species <- function(occurrence_ppty){
   
   # STEP 1: Computing initial fish biomass model (M0) ####
   data_M0 <- occurrence_ppty %>% 
-    rename(property = !!property)
-  M0 <- lm(property ~ 1,data=data_M0)
+    rename(property = !!property) 
+    # mutate(richness = as.factor(richness)) # richness as a factor or a continuous predictor
+  M0 <- lm(property~ richness,data=data_M0)
+  
+  # # Box-Cox
+  # bc <- MASS::boxcox(M0,lambda=seq(-2,2,length=200))
+  # lambda <- bc$x[which.max(bc$y)]
+  # z <- (data_M0$property^lambda-1)/lambda
+  # M0 <- lm(z ~ data_M0$richness)
+  
+  # # Test the model
   # par(mfrow=c(2,2)) ; plot(M0)
+  # shapiro.test(residuals(M0)) # not normal
+  # lmtest::bptest(M0) # Not homoscedastic
+  # lmtest::dwtest(M0) # Independent
+  
+  
   AIC_M0 <- AIC(M0)
   
   #STEP 2: TESTING THE EFFECT OF EACH FISH SPECIES INDIVIDUALLY ####
@@ -145,6 +159,32 @@ property <- "Complementarity"
 site <- SITE[5]
 nb_sp <- 15
 
+# account for richness
+SUMMARY_KEY_SPECIES <- NULL
+for (site in SITE){
+  for (property in PROPERTIES){
+    OCCURRENCE_PPTY <- NULL
+    for (nb_sp in c(10:20) ){
+      occurrence_ppty <- read.table(paste0("data/processed/maire/occurrence_ppty",site,"_",nb_sp,"species.txt"),header=T)
+      OCCURRENCE_PPTY <- rbind(OCCURRENCE_PPTY,occurrence_ppty)
+    }
+    OP <- OCCURRENCE_PPTY %>% 
+      mutate(richness = 30 - simul + 1)
+    
+    Summary_key_species <- infer_key_species(OP) %>% 
+      rownames_to_column("SName")
+    if (dim(Summary_key_species)[1] > 0){
+      Summary_key_species$site <- site
+      Summary_key_species$property <- property
+    }
+    SUMMARY_KEY_SPECIES <- rbind(SUMMARY_KEY_SPECIES,Summary_key_species)
+  }
+}
+
+
+
+
+# Previous (richness by richness) method
 SUMMARY_KEY_SPECIES <- NULL
 for (site in SITE){
   for (property in PROPERTIES){
@@ -164,32 +204,58 @@ SUMMARY_KEY_SPECIES %>%
   filter(coeff_sp < 0)
 
 #_______________________________________________________________________________
-# Build table #method2 (better ?) ####
+# Plot nb of key species ####
 species <- read.table("data/raw/distinctiveness of the species.txt",header=T) %>% 
   pull(SName) 
 distinct_sp <- species[1:10]
 common_sp <- species[11:30]
 
-SUMM2 <- SUMMARY_KEY_SPECIES %>% 
+SUMM2 <- SUMMARY_KEY_SPECIES %>%
+  mutate(property = if_else(property=="productivity","Productivity",property)) %>% 
   mutate(status = if_else(SName %in% distinct_sp,"Distinct","Common")) %>% 
-  arrange(factor(property, levels = PROPERTIES)) %>% 
-  mutate(property = factor(property,levels=PROPERTIES)) %>% 
+  arrange(factor(property, levels = c("Productivity","DeltaY","Selection","Complementarity"))) %>% 
+  mutate(property = factor(property,levels=c("Productivity","DeltaY","Selection","Complementarity"))) %>% 
   arrange(factor(site, levels = SITE)) %>% 
-  mutate(site = factor(site,levels=SITE))
+  mutate(site = factor(site,levels=SITE)) %>% 
+  filter(!(property == "DeltaY")) %>% 
+  group_by(site,property,status) %>% 
+  mutate(count = n())
 
 cols <- c("Distinct" = "#F8766D", "Common" = "#00BFC4")
 ggplot(SUMM2,aes(x=property,fill=status))+
   geom_histogram(stat="count") +
   facet_wrap(~site)+
-  theme(axis.text.x = element_text(angle = 60)) +
+  theme(axis.text.x = element_text(angle = 66)) +
   scale_color_manual(values = cols,
                      aesthetics = "fill") +
-  ggtitle(paste("number of species =", nb_sp)) +
   theme(axis.text.x = element_text(hjust=1)) +
-  ggsave(paste0("figures/2021_09_lm_maire/ppty_site_categ_",nb_sp,"species.png"))
+  ggsave(paste0("figures/2021_09_lm_maire/nb_key_sp.png"))
+
   
+SUMM3 <- SUMM2 %>% 
+  group_by(site,property,status) %>% 
+  mutate(count = n()) %>% 
+  summarize(coeff = mean(coeff_sp),count=mean(count))
+
+
+ggplot(SUMM3,aes(x=property,y=coeff,fill=status))+
+  # stat_summary(geom = "bar", fun = mean, position = "dodge") +
+  # stat_summary(geom = "errorbar", fun.data = mean_se, position = "dodge",width = 0.5)+
+  scale_color_manual(values = cols, aesthetics = "fill") +
+  geom_histogram(stat="identity",position = "dodge") +
+  theme(axis.text.x = element_text(angle = 66,hjust=1)) +
+  ylim(c(0,2))+
+  facet_wrap(~site) +
+  geom_text(aes(label=count), vjust=0,position = position_dodge(width = 1)) +
+  ggsave(paste0("figures/2021_09_lm_maire/mean_effect_key_sp.png"),height=7,width=7)
+
+  
+
+
+
+
+# table
 ppty <- "DeltaY"
-# sp_kept <- distinct_sp
 
 SUMM2 %>% 
   select(site,property,SName,coeff_sp) %>% 
@@ -208,55 +274,8 @@ SUMM2 %>%
   kable_styling()
 
 
-#________________________________________________________________________________________
-# Build table #method1 (bad, suppress it) ####
-species <- read.table("data/raw/distinctiveness of the species.txt",header=T) %>% 
-  pull(SName)
-table_maire <- data.frame(matrix(nrow = 44,ncol = 32))
-colnames(table_maire) <- c("Site", "Property",species)
-sites <- NULL
-properties <- NULL
-for (i in c(1:11)){
-  sites <- c(sites, c(SITE[i],SITE[i],SITE[i],SITE[i]) )
-  properties <- c(properties, PROPERTIES)
-}
-table_maire$Site <- sites
-table_maire$Property <- properties
-table_maire <- table_maire %>% 
-  mutate(Property = if_else(Property=="productivity","Productivity",Property))
-# which(is.na(table_maire)) <- 
 
-for (k in 1:dim(SUMMARY_KEY_SPECIES)[1] ){
-  focus_sp <- SUMMARY_KEY_SPECIES[k,]
-  column <- which(colnames(table_maire) == focus_sp$SName)
-  row <- which(table_maire$Site == focus_sp$site & table_maire$Property == focus_sp$property)
-  table_maire[row,column] <- focus_sp$coeff_sp
-}
-
-# generate table
-# CHOOSE PROPERTY
-ppty <- "Selection"
-
-table_maire_ppty <- table_maire %>% 
-  filter(Property==ppty)
-
-table_maire_to_view <- table_maire_ppty[, colSums(is.na(table_maire_ppty)) < nrow(table_maire_ppty)] # remove columns with NA only
-species <- read.table("data/raw/distinctiveness of the species.txt",header=T) %>% 
-  pull(SName) 
-distinct_sp <- species[1:10]
-common_sp <- species[11:30]
-
-# CHOOSE DISTINCT OR COMMON
-sp_kept <- common_sp
-# sp <- "common"
-col_kept <- which(colnames(table_maire_to_view) %in% sp_kept)
-
-# table <- 
-table_maire_to_view[,c(1,2,col_kept)] %>%  
-  kable(escape = F) %>%
-  kable_styling()
-# cat(table, file = paste0("figures/2021_09_lm_maire/",ppty,"_",sp,".png"))
-
+#________________________________________
 # PLots ####
 # Represent the amount of each property in each site, 
 # measured on the 30 random simulations containing all 15 species
