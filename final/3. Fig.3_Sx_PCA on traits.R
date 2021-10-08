@@ -122,7 +122,7 @@ ggplot(richness,aes(x=site,y=RS_mono))+
   ggsave("figures_tables/Richness.png")
 
 
-# 4) Fig.Sx: temporal change in biomass
+# 4) Fig.Sx: temporal change in biomass ####
 # mean biomass in time
 
 MEAN <- NULL
@@ -141,4 +141,6 @@ MEAN2 <- MEAN %>%
 ggplot(MEAN2,aes(x=date,y=totalBiomass.t.ha.)) +
   facet_wrap(~site)+
   geom_line() +
+  xlab("Year") +
+  ylab("Biomass (t/ha)") +
   ggsave("figures_tables/Temporal_evolution_biomass.png",height=9,width=11)

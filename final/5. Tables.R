@@ -100,11 +100,13 @@ ggsave ("figures_tables/Fig. SX_correlation between traits.png",plot=plot_cor,dp
 #________________________________________________________________________________
 # Table Sx: Trait values and distinctiveness ####
 snsn <- read.table("data/raw/correspondence_SName_Id.txt",header=T)
-Species_name <- snsn$Name
-Short_name <- snsn$SName
-
-Distinctiveness <- distinct_tot$Di
+distinct_tot <- read.table("data/raw/distinctiveness of the species.txt",header=T)
+snsn_di <- merge(snsn,distinct_tot,by="SName")
+Species_name <- snsn_di$Name
+Short_name <- snsn_di$SName
+Distinctiveness <- snsn_di$Di
 table1 <- cbind(Species_name,Short_name,selected_traits,Di=round(Distinctiveness,digits=3))
+# table1 <- table1[,c(1,2, order(colnames(table1)[3:16]) ,17) ]
 
 tabletrait <- table1 %>%
   kable( escape = F) %>%

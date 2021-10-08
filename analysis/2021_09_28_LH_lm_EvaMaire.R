@@ -143,7 +143,7 @@ infer_key_species <- function(occurrence_ppty){
 PROPERTIES <- c("productivity","DeltaY","Selection","Complementarity")
 property <- "Complementarity"
 site <- SITE[5]
-nb_sp <- 11
+nb_sp <- 15
 
 SUMMARY_KEY_SPECIES <- NULL
 for (site in SITE){
@@ -260,11 +260,12 @@ table_maire_to_view[,c(1,2,col_kept)] %>%
 # PLots ####
 # Represent the amount of each property in each site, 
 # measured on the 30 random simulations containing all 15 species
+PROPERTIES <- c("productivity","DeltaY","Selection","Complementarity")
 PLOTS <- NULL
 i <- 0
 for (site in SITE){
     i <- i+1
-    occurrence_ppty <- read.table(paste0("data/processed/maire/occurrence_ppty",site,".txt"),header=T)
+    occurrence_ppty <- read.table(paste0("data/processed/maire/occurrence_ppty",site,"_15species.txt"),header=T)
     toplot <- occurrence_ppty %>% 
       select(site,order,productivity,DeltaY,Selection,Complementarity) %>% 
       gather(key = property,value = value,-c(site,order)) %>% 
@@ -273,8 +274,24 @@ for (site in SITE){
     
     plot <- ggplot(toplot,aes(x=property,y=value))+
       ggtitle(site) +
-      geom_boxplot()
+      geom_boxplot() +
+      ylim(c(-4,6))
     PLOTS[[i]] <- plot
+    # ggsave(plot = plot,filename = paste0("figures/2021_09_lm_maire/15species_",site,".png"))
 }
 
-PLOTS[11:1]
+PLOT <- PLOTS
+
+complete_plot <- 
+  grid.arrange( PLOT[[1]],PLOT[[2]], PLOT[[3]],
+                                PLOT[[4]], PLOT[[5]],PLOT[[6]],
+                                PLOT[[7]],PLOT[[8]],PLOT[[9]],
+                                PLOT[[10]], PLOT[[11]],
+                                ncol = 3, nrow = 4, 
+                                layout_matrix = rbind( c(0,1,2),c(3,4,5),c(6,7,8),
+                                                       c(9,10,11)))
+
+ggsave(plot = complete_plot,
+       filename = paste0("figures/2021_09_lm_maire/properties_15species.png"),
+       width = 10, height = 10)
+
