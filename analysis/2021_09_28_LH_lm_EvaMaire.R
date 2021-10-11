@@ -1,4 +1,3 @@
-library(tidyverse)
 source("final/0. Packages.R")
 source("R/Analysis_data.R")
 source("R/Common variables.R")
@@ -219,9 +218,10 @@ SUMM2 <- SUMMARY_KEY_SPECIES %>%
   mutate(site = factor(site,levels=SITE)) %>% 
   filter(!(property == "DeltaY")) %>% 
   group_by(site,property,status) %>% 
-  mutate(count = n())
+  mutate(count = n()) %>% 
+  mutate(status = if_else(status=="Common","Ordinary",status))
 
-cols <- c("Distinct" = "#F8766D", "Common" = "#00BFC4")
+cols <- c("Distinct" = "#F8766D", "Ordinary" = "#00BFC4")
 ggplot(SUMM2,aes(x=property,fill=status))+
   geom_histogram(stat="count") +
   facet_wrap(~site)+
@@ -247,6 +247,9 @@ ggplot(SUMM3,aes(x=property,y=coeff,fill=status))+
   ylim(c(0,2))+
   facet_wrap(~site) +
   geom_text(aes(label=count), vjust=0,position = position_dodge(width = 1)) +
+  labs(fill = "Category of species") +
+  xlab("Property") +
+  ylab("Mean effect of key species") +
   ggsave(paste0("figures/2021_09_lm_maire/mean_effect_key_sp.png"),height=7,width=7)
 
   

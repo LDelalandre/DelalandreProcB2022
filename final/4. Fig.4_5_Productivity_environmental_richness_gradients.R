@@ -12,7 +12,7 @@ gg_removal_productivity <- function(){
   # Legend: a boolean. Display a legend or not.
   list(
     labs(x="Number of species removed",y=measure),
-    geom_line(aes(x=simul-1,y=increasing, color="#00BFC4"),size=1),
+    geom_line(aes(x=simul-1,y=increasing, color="#00BFC4"),size=1,linetype = "longdash"),
     geom_line(aes(x=simul-1,y=decreasing, color="#F8766D"),size=1) ,
     geom_ribbon(aes(ymin=int_min, ymax=int_max), alpha=0.5,fill="grey60") ,
     geom_line(aes(x=simul-1,y=int_max, color="grey60"),size=0) ,
@@ -28,8 +28,10 @@ gg_removal_productivity <- function(){
     theme(axis.title = element_blank()),
     scale_color_identity(name = "Order of species loss",
                          breaks = c("#00BFC4","#F8766D","grey60"),
-                         labels = c("Common species lost first", "Distinct species lost first", "Species lost randomly"),
+                         labels = c("Ordinary species lost first", "Distinct species lost first", "Species lost randomly"),
                          guide = "legend"),
+    scale_linetype_manual(breaks = c("#00BFC4","#F8766D"),
+                          values = c("#00BFC4" =  "longdash","#F8766D" = "solid")),
     if(measure=="productivity_tot"){
       ylim(0,3.5)
     }
@@ -203,7 +205,7 @@ p <- ggdraw() +
   draw_plot_label(label = c("A", "B"), size = 15,
                   x = c(0, 0), y = c(1, 1-height_A))
 
-ggsave(filename = paste0("figures_tables/Main figure_",measure,"_removal.png"), 
+ggsave(filename = paste0("figures_tables/Figure 4.jpg"), 
        plot = p,
        width = 20, 
        height = 30,
@@ -242,7 +244,7 @@ order_loss <- function(orde){
   if (orde=="decreasing"){
     "A. Distinct species lost first"
   } else {
-    "B. Common species lost first"
+    "B. Ordinary species lost first"
   }
 }
 
@@ -250,7 +252,7 @@ data_AUC2 <- data_AUC1 %>%
   gather(order,AUC,-site,-group,-number,-Temp_moy) %>% 
   mutate(order = map_chr(order,order_loss))
 data_AUC2$group <- factor(data_AUC2$group,levels=c("cold","warm-wet","warm","warm-dry"))
-data_AUC2$order <- factor(data_AUC2$order,levels=c("A. Distinct species lost first","B. Common species lost first"))
+data_AUC2$order <- factor(data_AUC2$order,levels=c("A. Distinct species lost first","B. Ordinary species lost first"))
 
 
 plot_AUC <- ggplot(data_AUC2,aes(x=Temp_moy,y=AUC,label=number))+
@@ -264,7 +266,7 @@ plot_AUC <- ggplot(data_AUC2,aes(x=Temp_moy,y=AUC,label=number))+
   ylab("Relative area under the curve (AUC)") +
   theme(strip.text = element_text(size=11))
 
-ggsave(filename = paste0("figures_tables/Main figure 2_AUC.png"), 
+ggsave(filename = paste0("figures_tables/Figure 5.jpg"), 
        plot = plot_AUC,
        width = 17, 
        height = 10,
