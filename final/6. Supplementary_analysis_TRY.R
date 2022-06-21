@@ -126,6 +126,20 @@ prodplot <-
   ggtitle("Effect traits (SLA, H, Nmass)")+
   ggpubr::stat_cor(method="spearman",label.y.npc = 0.99)
 
+prodplot_BES <- ggplot(toplot,aes(x=Di.forceeps,y=Di.focus,label=SName)) +
+  labs(x="Distinctiveness computed on ForCEEPS parameters",y="Distinctiveness computed on TRY traits") +
+  geom_point() +
+  theme( plot.title=element_text(size=16),
+         axis.text=element_text(size=16),
+         axis.title=element_text(size=16)) +
+  theme(legend.text = element_text(size=16),
+        legend.title = element_text(size=16) ) +
+  ggtitle("Effect traits (SLA, H, Nmass)")+
+  ggpubr::stat_cor(method="spearman",label.y.npc = 0.99) 
+        
+        
+ggsave("figures_tables/TRY_A.png", prodplot_BES,width = 10, height = 6)
+
 #_________________________________
 # Combine the two plots ####
 

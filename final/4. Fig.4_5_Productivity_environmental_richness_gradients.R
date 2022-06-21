@@ -143,7 +143,8 @@ sites <- read.table("data/raw/Site description.txt",header=T)
 sites$number <- c(5,6,4,7,8,9,3,2,10,1,11) # number the sites in the environmental graph
 sites_order_plot <- sites %>% 
   arrange(number) %>% 
-  mutate(group = c("cold","cold","cold","warm-wet","warm-wet","warm","warm","warm","warm-dry","warm-dry","warm-dry"))
+  mutate(group = c("cold","cold","cold","warm-wet","warm-wet","warm","warm","warm","warm-dry","warm-dry","warm-dry")) %>% 
+  mutate(group=as.factor(group))
 sites_order_plot$group <- factor(sites_order_plot$group ,levels=c("cold","warm-wet","warm","warm-dry"))
 
 # Fig. 4 ####
@@ -212,6 +213,28 @@ ggsave(filename = paste0("figures_tables/Figure 4.jpg"),
        units = "cm",
        dpi = 300)
 
+environment_number_ppt <-
+  ggplot(sites_order_plot, aes(x=Temp_moy,y=Annual_ppt,label=number,shape=group))+
+  geom_point(size = 4)+
+  scale_shape_manual(values = c(4, 1, 2, 8), name="Environment") +
+  xlab("Mean annual temperature (°C)")+
+  ylab("Annual precipitation (mm)") +
+  xlim(1,10) +
+  ylim(380,1500)+
+  ggrepel::geom_text_repel() +
+  egg::theme_article(base_size=10) +
+  theme( plot.title=element_text(size=16),
+         axis.text=element_text(size=16),
+         axis.title=element_text(size=16)) +
+  theme(legend.text = element_text(size=16),
+        legend.title = element_text(size=16))
+
+ggsave(filename = paste0("figures_tables/Figure 4A.png"), 
+       plot = environment_number_ppt,
+       width = 20, 
+       height = 10,
+       units = "cm",
+       dpi = 300)
 
 
 
@@ -255,20 +278,27 @@ data_AUC2$group <- factor(data_AUC2$group,levels=c("cold","warm-wet","warm","war
 data_AUC2$order <- factor(data_AUC2$order,levels=c("A. Distinct species lost first","B. Ordinary species lost first"))
 
 
-plot_AUC <- ggplot(data_AUC2,aes(x=Temp_moy,y=AUC,label=number))+
+
+plot_AUC <- ggplot(data_AUC2,aes(x=Temp_moy,y=AUC,label=number,shape = group))+
   facet_wrap(~order)+
-  geom_point()+
+  geom_point(size = 3)+
   scale_shape_manual(values = c(4, 1, 2, 8),name="Environment") +
   labs(color="Order of species loss") +
   egg::theme_article(base_size=11) +
   ggrepel::geom_text_repel() +
   xlab("Mean annual temperature (°C)") +
   ylab("Relative area under the curve (AUC)") +
-  theme(strip.text = element_text(size=11))
+  theme(strip.text = element_text(size=11)) +
+  theme( plot.title=element_text(size=16),
+         axis.text=element_text(size=16),
+         axis.title=element_text(size=16)) +
+  theme(legend.text = element_text(size=16),
+        legend.title = element_text(size=16),
+        strip.text = element_text(size = 16))
 
-ggsave(filename = paste0("figures_tables/Figure 5.jpg"), 
+ggsave(filename = paste0("figures_tables/Figure 5.pdf"), 
        plot = plot_AUC,
-       width = 17, 
-       height = 10,
+       width = 30, 
+       height = 18,
        units = "cm",
        dpi = 300)

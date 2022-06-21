@@ -14,9 +14,11 @@ notebook
 paper
 paper_2
 Stage M2
+Conceptual paper
 TEST random orders/
 TEST zip
 data/processed/maire
 *.csv
 *.docx
 *.xlsx
+analysis_subset_traits/data

@@ -162,5 +162,5 @@ ggplot(SUMM3,aes(x=property,y=coeff,fill=status))+
   labs(fill = "Category of species") +
   xlab("Property") +
   ylab("Mean effect of key species") +
-  ggsave(paste0("figures/2021_09_lm_maire/mean_effect_key_sp.png"),height=7,width=7)
+  ggsave(paste0("figures_tables/mean_effect_key_sp.png"),height=7,width=7)
 
