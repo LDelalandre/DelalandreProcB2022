@@ -4,8 +4,8 @@ packages = c("tidyverse",
              "funrar", # Functional distinctiveness computation
              "cowplot", "gridExtra", "ggsignif", "egg", "ggpubr","ggcorrplot", # Packages used for plots
              "kableExtra", # Represent tables
-             "zen4R", # download data from Zenodo repository
-             "functClust" # functional clustering
+             "zen4R" # download data from Zenodo repository
+             # "functClust" # functional clustering
 )
 
 ## Load, or install and load, packages

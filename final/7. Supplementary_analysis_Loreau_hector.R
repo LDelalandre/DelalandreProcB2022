@@ -161,6 +161,26 @@ ggplot(SUMM3,aes(x=property,y=coeff,fill=status))+
   geom_text(aes(label=count), vjust=0,position = position_dodge(width = 1)) +
   labs(fill = "Category of species") +
   xlab("Property") +
-  ylab("Mean effect of key species") +
-  ggsave(paste0("figures_tables/mean_effect_key_sp.png"),height=7,width=7)
+  ylab("Mean effect of key species") 
+
+ggsave(paste0("figures_tables/mean_effect_key_sp.png"),plot = SUMM3,height=7,width=7)
+
+
+# camembert 
+
+fsite <- "Bever" # Bever, Bern,Sion
+fproperty <- "Selection"
+SUMM3 %>%
+  filter(site == fsite  ) %>% 
+  filter( property == fproperty) %>% 
+  mutate(coeff_percent = coeff/sum(coeff)) %>% 
+  ggplot(aes(x="",y=coeff_percent,fill=status))+
+  geom_bar(width = 1, stat = "identity", color = "white") +
+  coord_polar("y", start = 0) +
+  theme_void() +
+  geom_text(aes( label = count), color = "white",size=25, position = position_stack(vjust = 0.5)) +
+  theme(legend.position = "none") 
+  # scale_fill_manual(values = c("#00BFC4","#F8766D"))
+  
+  
 

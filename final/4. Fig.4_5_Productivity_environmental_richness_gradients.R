@@ -179,6 +179,20 @@ environment_number <-
   ylim(380,1500)+
   ggrepel::geom_text_repel() +
   egg::theme_article(base_size=10)
+
+# same for ppt
+environment_number_ppt <-
+  ggplot(sites_order_plot, aes(x=Temp_moy,y=Annual_ppt,label=number,shape=group))+
+  geom_point()+
+  scale_shape_manual(values = c(4, 1, 2, 8), name="Environment") +
+  xlab("Mean annual temperature (°C)")+
+  ylab("Annual precipitation (mm)") +
+  xlim(1,10) +
+  ylim(380,1500)+
+  ggrepel::geom_text_repel(size = 8) +
+  egg::theme_article(base_size=20) +
+  theme(legend.position = "none")
+environment_number_ppt
   
 
 complete_plot3 <- grid.arrange( PLOT[[1]],PLOT[[2]], PLOT[[3]],
